@@ -1,6 +1,6 @@
 # Forever Showcase API v1
 
-Global: `ForeverShowcase`. Runtime version: `VERSION = "0.5.4"`.
+Global: `ForeverShowcase`. Runtime version: `VERSION = "0.6.4"`.
 Contract version: `API_VERSION = 1`. Lifecycle methods use Lua colon syntax;
 `ForeverShowcase.Report(message)` is a dot-call logging helper. API v1 is the
 integration target after the automated lifecycle tests; native validation remains
@@ -78,8 +78,11 @@ This prevents layering a new scene over a potentially unrestored workspace.
   the previous scene.
 - `Stop(reason?) -> ok, message?`: idempotently stops; pending combat restoration
   counts as accepted. Cleanup failure returns false.
-- `Next() -> ok, message`: cycles within the active integration in declared order,
-  skipping unavailable scenes; with one available scene it restarts that scene.
+- `Next() -> ok, message`: advances within the active integration in declared order,
+  skipping unavailable scenes. Stops at the last available scene without wrapping
+  or restarting. `Previous()` stops at the first available scene.
+- `CanNext()`, `CanPrevious()` return whether an available scene exists in that
+  direction outside combat. Restart the current scene explicitly with Start.
 - `List() -> rows`: fresh metadata records, sorted by add-on ID then declared
   scene order. Fields: addon, addonTitle, id, title, description, caption,
   instructions, available, reason. No adapter callbacks are exposed.

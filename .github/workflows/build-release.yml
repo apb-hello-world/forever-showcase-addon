@@ -64,3 +64,18 @@ jobs:
             gh release upload $env:RELEASE_TAG --repo $env:GH_REPO --clobber @assets
           }
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
+  curseforge:
+    if: startsWith(github.ref, 'refs/tags/addon-v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Publish addon to CurseForge
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          CF_PROJECT_ID: '1832297'
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python tools/curseforge.py upload --tag "$RELEASE_TAG"

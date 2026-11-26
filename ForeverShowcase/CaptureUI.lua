@@ -18,14 +18,23 @@ local function cursor()
     local sw,sh=C:Screen()
     return math.max(0,math.min(sw,x/s/UIParent:GetWidth()*sw)),math.max(0,math.min(sh,(1-y/s/UIParent:GetHeight())*sh))
 end
-local function paint(f,r)
-    local w,h=UIParent:GetWidth(),UIParent:GetHeight()
+local function paint(f,r,width,height)
+    local w,h=width or UIParent:GetWidth(),height or UIParent:GetHeight()
     local x,y,rw,rh=r.x/r.screenWidth*w,r.y/r.screenHeight*h,r.width/r.screenWidth*w,r.height/r.screenHeight*h
     local areas={{0,0,w,y},{0,y,x,rh},{x+rw,y,w-x-rw,rh},{0,y+rh,w,h-y-rh},
         {x,y,rw,1},{x,y+rh-1,rw,1},{x,y,1,rh},{x+rw-1,y,1,rh}}
     for i,a in ipairs(areas) do
         local t=f.parts[i]; t:ClearAllPoints(); t:SetPoint('TOPLEFT',a[1],-a[2]); t:SetSize(math.max(.01,a[3]),math.max(.01,a[4]))
     end
+end
+function C:CreateFramingSubject()
+    local f=CreateFrame('Frame',nil,UIParent)
+    f:SetSize(760,560); f:SetPoint('CENTER'); f:SetFrameStrata('DIALOG')
+    f.parts={}
+    for i=1,8 do f.parts[i]=box(f,0,0,1,1,i>4 and .9 or 0,i>4 and .7 or 0,i>4 and .3 or 0,i>4 and 1 or .65) end
+    paint(f,{x=54,y=50,width=652,height=460,screenWidth=760,screenHeight=560},760,560)
+    ui.Label(f,'Repeatable framing  |  16 px padding',14,54,20,652,24,true)
+    return f
 end
 function C:ShowArea(draw)
     if self:IsBusy() or InCombatLockdown() or not API:Status() then return end
@@ -57,7 +66,7 @@ function C:ShowArea(draw)
         f:SetScript('OnHide',function(self) self.x=nil; self.rect=nil; API.Presentation:ShowControls() end)
         table.insert(UISpecialFrames,'ForeverShowcaseFraming')
     end
-    API:HideWindow(); if self.gallery then self.gallery:Hide() end
+    API:HideWindow(true); if self.gallery and not API:IsScreenshotSubject(self.gallery) then self.gallery:Hide() end
     API.Presentation:SuspendControls()
     local f=self.overlay; f.draw=draw; f.x=nil; f.rect=nil
     local sw,sh=self:Screen()
@@ -66,11 +75,14 @@ function C:ShowArea(draw)
     f:Show()
 end
 local page,showAll,addonFilter=1,false,nil
+function C:GalleryRecords()
+    return self.sampleRecords or self:DB().captures
+end
 function C:RefreshGallery()
     local w=self.gallery; if not w then return end
     local addon,scene=API:Status()
     local titles={}
-    for _,r in ipairs(self:DB().captures) do titles[r.addon]=r.addonTitle or titles[r.addon] or r.addon end
+    for _,r in ipairs(self:GalleryRecords()) do titles[r.addon]=r.addonTitle or titles[r.addon] or r.addon end
     if addonFilter and not titles[addonFilter] then addonFilter=nil end
     w.addonOptions={{title='All addons'}}
     local options={}
@@ -79,8 +91,8 @@ function C:RefreshGallery()
     for _,option in ipairs(options) do w.addonOptions[#w.addonOptions+1]=option end
     local all=showAll or not addon
     local records={}
-    for i=#self:DB().captures,1,-1 do
-        local r=self:DB().captures[i]
+    for i=#self:GalleryRecords(),1,-1 do
+        local r=self:GalleryRecords()[i]
         if (all and (not addonFilter or r.addon==addonFilter)) or (not all and r.addon==addon and r.scene==scene) then records[#records+1]=r end
     end
     w.addons:SetText((titles[addonFilter] or 'All addons')..'  v')
@@ -95,7 +107,7 @@ function C:RefreshGallery()
         if r then
             b.label:SetText(self:Name(r)); b.info:SetText(((showAll or not addon) and ((r.addonTitle or r.addon)..'  -  ') or '')..r.width..' x '..r.height..'  -  '..(r.exported and 'Sent' or 'Pending send'))
             b.remove.id=r.id; b:Show()
-            if self:IsBusy() then b.remove:Disable() else b.remove:Enable() end
+            if self.sampleRecords or self:IsBusy() then b.remove:Disable() else b.remove:Enable() end
         else b:Hide() end
     end
     if w.addonMenu:IsShown() then self:RefreshAddonMenu() end
@@ -103,7 +115,7 @@ function C:RefreshGallery()
     w.count:SetText(string.format('%d captures  |  Page %d / %d',#records,page,math.max(1,math.ceil(#records/6))))
     if page>1 then w.previous:Enable() else w.previous:Disable() end
     if page*6<#records then w.next:Enable() else w.next:Disable() end
-    if #self:DB().captures>0 and not self:IsBusy() and not InCombatLockdown() then w.send:Enable() else w.send:Disable() end
+    if not self.sampleRecords and #self:GalleryRecords()>0 and not self:IsBusy() and not InCombatLockdown() then w.send:Enable() else w.send:Disable() end
 end
 function C:RefreshAddonMenu()
     local w=self.gallery; if not w then return end
@@ -162,7 +174,7 @@ function C:ShowGallery()
         local elapsed=0
         w:SetScript('OnUpdate',function(_,delta) elapsed=elapsed+delta; if elapsed>.3 then elapsed=0; C:RefreshGallery() end end)
     end
-    API:HideWindow(); if API.ScenePicker then API.ScenePicker:Hide() end
+    API:HideWindow(true); if API.ScenePicker and not API:IsScreenshotSubject(API.ScenePicker) then API.ScenePicker:Hide() end
     self.gallery:Show(); self:RefreshGallery()
 end
 

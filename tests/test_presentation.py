@@ -101,4 +101,23 @@ class Presentation(unittest.TestCase):
         ''')
 
 
-if __name__=='__main__': unittest.main()
+    def test_navigation_stops_at_available_scene_boundaries(self):
+        presentation_runtime().execute("""
+            local a=ForeverShowcase
+            local d=definition()
+            d.scenes[2].enter=function() enters=(enters or 0)+1 end
+            d.scenes[3]={id='unavailable',title='Unavailable',enter=function() error('must skip') end,leave=function() end,available=function() return false,'Not ready' end}
+            a:Register(1,d); assert(a:Start('test','one'))
+            local t=a.Presentation.toolbar
+            assert(not t.previous:IsEnabled() and t.next:IsEnabled())
+            assert(not a:Previous()); assert(select(2,a:Status())=='one')
+            t.next:Click(); assert(select(2,a:Status())=='two')
+            assert(not t.next:IsEnabled() and t.previous:IsEnabled())
+            local before=enters; assert(not a:Next()); t.next:Click(); assert(enters==before)
+            a:ShowWindow(); assert(not a.Window.next:IsEnabled())
+            t.restart:Click(); assert(enters==before+1)
+            t.previous:Click(); assert(select(2,a:Status())=='one')
+            d=definition('single'); d.scenes={d.scenes[1]}; a:Register(1,d)
+            assert(a:Start('single','one'))
+            assert(not t.next:IsEnabled() and not t.previous:IsEnabled() and t.restart:IsEnabled())
+        """)

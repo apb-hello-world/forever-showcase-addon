@@ -3,12 +3,19 @@ local window, selectedAddon, selectedScene
 local addonPage, scenePage, pageSize = 1, 1, 6
 local lastStatus, elapsed, availabilityElapsed = nil, 0, 0
 local function enabled(button, value) if value then button:Enable() else button:Disable() end end
+local function selectorRows()
+    local rows={}
+    for _,row in ipairs(API:List()) do
+        if row.addon~='forever-showcase' or API._showSelfInSelector then rows[#rows+1]=row end
+    end
+    return rows
+end
 local function focusActive()
     local addon, scene = API:Status()
     if not addon then return end
     selectedAddon, selectedScene = addon, scene
     local addonIndex, sceneIndex, seen = 0, 0, {}
-    for _, row in ipairs(API:List()) do
+    for _, row in ipairs(selectorRows()) do
         if not seen[row.addon] then
             seen[row.addon] = true; addonIndex = addonIndex+1
             if row.addon==addon then addonPage=math.ceil(addonIndex/pageSize) end
@@ -136,7 +143,7 @@ local function build()
 end
 function API:RefreshWindow()
     if not window then return end
-    local rows, addons, seen, scenes = self:List(), {}, {}, {}
+    local rows, addons, seen, scenes = selectorRows(), {}, {}, {}
     for _, row in ipairs(rows) do
         if not seen[row.addon] then addons[#addons+1]={id=row.addon,title=row.addonTitle}; seen[row.addon]=true end
     end
@@ -186,16 +193,34 @@ function API:RefreshWindow()
     window.noticeLabel:SetText(window.notice or '')
     window.start:SetText(addon==selectedAddon and scene==selectedScene and addon and 'Restart scene' or 'Start scene')
     enabled(window.start, selected and selected.available and not fighting and not pending and not faulted)
-    enabled(window.next, addon and not fighting and not pending and not faulted)
+    enabled(window.next, addon and not fighting and not pending and not faulted and self:CanNext())
     enabled(window.stop, addon~=nil)
     window.hide:SetText(addon and 'Scene toolbar' or 'Hide controls')
     lastStatus=statusKey()
 end
-function API:ShowWindow()
+function API:ShowWindow(addonID)
     if not window then build() end
     -- Follow a command-activated scene on reopening, while browsing remains free.
     focusActive()
+    if addonID then
+        local seen,index={},0
+        for _,row in ipairs(selectorRows()) do
+            if not seen[row.addon] then
+                seen[row.addon]=true; index=index+1
+                if row.addon==addonID then selectedAddon=addonID; selectedScene=nil; scenePage=1; addonPage=math.ceil(index/pageSize) end
+            end
+        end
+    end
     window:Show(); window:Raise(); self:RefreshWindow()
     if self.Presentation then self.Presentation:ShowControls(); self.Presentation:Refresh() end
 end
-function API:HideWindow() if window then window:Hide() end end
+function API:HideWindow(forCapture)
+    if window and not (forCapture and self:IsScreenshotSubject(window)) then window:Hide() end
+end
+function API:SelectorState()
+    return {addon=selectedAddon,scene=selectedScene,addonPage=addonPage,scenePage=scenePage}
+end
+function API:RestoreSelectorState(state)
+    selectedAddon,selectedScene,addonPage,scenePage=state.addon,state.scene,state.addonPage,state.scenePage
+    self:RefreshWindow()
+end

@@ -108,3 +108,7 @@ addon works when the companion is closed.
 - In All captures, choose an addon from the dropdown. Only that addon's captures should appear, newest first. Choose All addons to show everything again.
 - Check deletion and pagination stay inside the filtered view; opening This scene hides the addon dropdown. Close/Escape dismisses the menu. Scroll a long addon menu to reach later entries.
 - Owner confirmed Auto-fit works correctly after the 0.5.3 coordinate correction; this update preserves that calculation.
+
+## Addon 0.6.4 bounded navigation
+
+- On the first available scene Previous is disabled; on the last available scene Next is disabled. Neither wraps, including slash-command navigation. Unavailable scenes are skipped. Restart still repeats the current scene.

@@ -1,0 +1,7 @@
+Forever Showcase 0.6.4
+
+- Capture repeatable scenes with adjustable framing, backdrops, and a movable toolbar.
+- Next and Previous stop at the ends of the scene list, preventing accidental repeat captures.
+- Includes optional Showcase demonstration scenes for its library, scene picker, toolbar, framing, backdrops, and capture records.
+- Showcase demonstration scenes remain hidden during normal use.
+- Send capture records to the optional Windows companion for cropping, styling, and batch export.

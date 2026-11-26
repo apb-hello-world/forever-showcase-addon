@@ -152,7 +152,7 @@ class Lifecycle(unittest.TestCase):
                 local slash=SlashCmdList.FOREVERSHOWCASE
                 slash(''); slash('list'); slash('EXAMPLE FIRST'); slash('info'); slash('next')
                 local _,id=ForeverShowcase:Status(); assert(id=='second')
-                slash('next'); _,id=ForeverShowcase:Status(); assert(id=='first')
+                slash('next'); _,id=ForeverShowcase:Status(); assert(id=='second')
                 slash('off'); slash('status'); slash('bogus'); assert(not ForeverShowcase:Status())
             ''')
 

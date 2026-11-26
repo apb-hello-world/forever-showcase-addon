@@ -2,7 +2,7 @@
 ## Title: Forever Showcase
 ## Notes: Developer scene lifecycle and screenshot companion.
 ## Author: Alex
-## Version: 0.5.4
+## Version: 0.6.4
 
 ## SavedVariables: ForeverShowcaseDB
 
@@ -13,3 +13,4 @@ Presentation.lua
 Capture.lua
 CaptureUI.lua
 Commands.lua
+SelfShowcase.lua

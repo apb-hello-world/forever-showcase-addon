@@ -106,9 +106,9 @@ function C:Take()
     local copy={}; for k,v in pairs(r) do copy[k]=v end
     pending={context=context,rect=copy,delay=.25,age=0,frames=0}
     if self.overlay then self.overlay:Hide() end
-    if self.gallery then self.gallery:Hide() end
-    if API.ScenePicker then API.ScenePicker:Hide() end
-    API:HideWindow(); API.Presentation:SuspendControls()
+    if self.gallery and not API:IsScreenshotSubject(self.gallery) then self.gallery:Hide() end
+    if API.ScenePicker and not API:IsScreenshotSubject(API.ScenePicker) then API.ScenePicker:Hide() end
+    API:HideWindow(true); API.Presentation:SuspendControls()
     if GameTooltip then GameTooltip:Hide() end
 end
 function C:Cancel()

@@ -1,5 +1,5 @@
 -- API v1. No SavedVariables, hooks, gameplay actions, or global API replacement.
-local API = { API_VERSION = 1, VERSION = "0.5.4", CAPABILITIES = { presentation = true } }
+local API = { API_VERSION = 1, VERSION = "0.6.4", CAPABILITIES = { presentation = true } }
 ForeverShowcase = API
 local registry, active, pending, busy, faulted = {}, nil, nil, false, false
 local function combat() return InCombatLockdown() end
@@ -156,16 +156,24 @@ function API:Start(addon, sceneID)
     end
     return true, scene.instructions or "Scene ready. Capture manually; /showcase off restores the workspace."
 end
-local function step(self, direction)
-    if not active then return false, "No active scene. Use /showcase list." end
+local function adjacent(direction)
+    if not active then return end
     local entry, current = registry[active.addon], active.scene.id
     local index = 1
     for i, id in ipairs(entry.order) do if id == current then index = i end end
-    for offset = 1, #entry.order do
-        local id = entry.order[(index + direction * offset - 1) % #entry.order + 1]
-        if availability(entry.scenes[id]) then return self:Start(entry.id, id) end
+    local last=direction==1 and #entry.order or 1
+    for i=index+direction,last,direction do
+        local id=entry.order[i]
+        if availability(entry.scenes[id]) then return entry.id,id end
     end
-    return false, "No available scenes."
+end
+function API:CanNext() return active~=nil and not combat() and not faulted and adjacent(1)~=nil end
+function API:CanPrevious() return active~=nil and not combat() and not faulted and adjacent(-1)~=nil end
+local function step(self, direction)
+    if not active then return false, "No active scene. Use /showcase list." end
+    local addon,id=adjacent(direction)
+    if id then return self:Start(addon,id) end
+    return false, direction==1 and "Last available scene. Use Restart to repeat it or Scene list to choose another." or "First available scene."
 end
 function API:Next() return step(self, 1) end
 function API:Previous() return step(self, -1) end
@@ -186,3 +194,8 @@ events:SetScript("OnEvent", function(_, event)
         if wasActive then report("Scene stopped for combat; protected restoration waits until combat ends.") end
     elseif event == "PLAYER_LOGOUT" then API:Stop("logout") end
 end)
+
+-- Only the built-in self-showcase adapter marks real Showcase windows as subjects.
+function API:IsScreenshotSubject(frame)
+    return frame and self._screenshotSubjects and self._screenshotSubjects[frame] or false
+end

@@ -3,7 +3,9 @@
 The toolbar works with existing adapters without any code change. Starting a
 scene closes the selector and shows Previous, Next, Restart, Stop scene, Scene
 list, Backdrop and Hide for 10s. Navigation stays within the current add-on,
-wraps and skips unavailable scenes. A one-scene integration restarts that scene.
+skips unavailable scenes and stops at either end without wrapping. Next and
+Previous disable at the last and first available scenes. Use Restart to repeat
+the current scene, including in a one-scene integration.
 Hide for 10s hides the selector and toolbar, leaves the scene/background active,
 then automatically brings the toolbar back. The user captures manually. No
 screenshot API, keybinding changes, chat sends or automatic game input is used.

@@ -19,7 +19,7 @@ class Packaging(unittest.TestCase):
             with ZipFile(paths[0]) as archive:
                 self.assertEqual(set(archive.namelist()), {
                     'ForeverShowcase/ForeverShowcase.toc', 'ForeverShowcase/Core.lua',
-                    'ForeverShowcase/Commands.lua', 'ForeverShowcase/Theme.lua', 'ForeverShowcase/UI.lua', 'ForeverShowcase/Presentation.lua', 'ForeverShowcase/Capture.lua', 'ForeverShowcase/CaptureUI.lua',
+                    'ForeverShowcase/Commands.lua', 'ForeverShowcase/SelfShowcase.lua', 'ForeverShowcase/Theme.lua', 'ForeverShowcase/UI.lua', 'ForeverShowcase/Presentation.lua', 'ForeverShowcase/Capture.lua', 'ForeverShowcase/CaptureUI.lua',
                     'ForeverShowcase/Media/StagekeeperShell.tga', 'ForeverShowcase/Media/StagekeeperButton.tga',
                     'ForeverShowcase/Media/StagekeeperWordmark.tga'})
                 toc = archive.read('ForeverShowcase/ForeverShowcase.toc').decode()

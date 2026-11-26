@@ -117,14 +117,8 @@ end
 local function fit()
     toolbar:SetScale(math.max(.1,math.min(1,(UIParent:GetWidth()-24)/880)))
 end
-local function build()
-    if toolbar then return end
-    backdrop=CreateFrame('Frame',nil,UIParent)
-    backdrop:SetAllPoints(UIParent); backdrop:SetFrameStrata('FULLSCREEN'); backdrop:SetFrameLevel(0)
-    backdrop:EnableMouse(true) -- prevent clicks through the opaque stage into the world
-    backdrop.fill=backdrop:CreateTexture(nil,'BACKGROUND'); backdrop.fill:SetAllPoints(); backdrop:Hide()
-    toolbar=CreateFrame('Frame','ForeverShowcaseToolbar',UIParent)
-    P.toolbar=toolbar; P.backdrop=backdrop
+local function createToolbar(name)
+    local toolbar=CreateFrame('Frame',name,UIParent)
     toolbar:SetSize(880,140); toolbar:SetPoint('TOP',UIParent,'TOP',0,-20)
     -- This is a capture overlay root, deliberately above opt-in scene windows.
     -- A scene's native click-to-raise must not cover the recovery controls.
@@ -174,7 +168,25 @@ local function build()
     toolbar.paddingMore:SetScript('OnClick',function() API.Capture:SetFitPadding(API.Capture:FitPadding()+4); P:Refresh() end)
     toolbar.note=ui.Label(toolbar,'',12,16,110,848,20,true)
     toolbar:SetScript('OnHide',function(self) self:StopMovingOrSizing(); if GameTooltip then GameTooltip:Hide() end end)
-    toolbar:Hide(); fit()
+    toolbar:Hide(); return toolbar
+end
+function P:CreateSubjectToolbar()
+    local subject=createToolbar(nil)
+    subject:ClearAllPoints(); subject:SetPoint('CENTER')
+    subject:SetScale(math.max(.1,math.min(1,(UIParent:GetWidth()-40)/880)))
+    subject.title:SetText('Forever Showcase  -  Scene controls')
+    subject.background:SetText('Backdrop: Scene')
+    subject.padding:SetText('Fit padding: 16 px')
+    subject.note:SetText('Stage a scene, frame the window, and capture. Stop restores your normal workspace.')
+    subject:Show(); return subject
+end
+local function build()
+    if toolbar then return end
+    backdrop=CreateFrame('Frame',nil,UIParent)
+    backdrop:SetAllPoints(UIParent); backdrop:SetFrameStrata('FULLSCREEN'); backdrop:SetFrameLevel(0)
+    backdrop:EnableMouse(true) -- prevent clicks through the opaque stage into the world
+    backdrop.fill=backdrop:CreateTexture(nil,'BACKGROUND'); backdrop.fill:SetAllPoints(); backdrop:Hide()
+    toolbar=createToolbar('ForeverShowcaseToolbar'); P.toolbar=toolbar; P.backdrop=backdrop; fit()
 end
 function P:Refresh()
     if not toolbar then return end
@@ -182,7 +194,9 @@ function P:Refresh()
     local ready=addon and not InCombatLockdown() and not pending and not faulted
     toolbar.title:SetText(addon and ('Forever Showcase  -  '..addon..' / '..scene) or
         faulted and 'Cleanup failed - reload required' or pending and 'Restoration pending until combat ends' or 'Scene stopped')
-    for _,key in ipairs({'previous','next','restart','stop'}) do enable(toolbar[key],ready) end
+    for _,key in ipairs({'restart','stop'}) do enable(toolbar[key],ready) end
+    enable(toolbar.next,ready and API:CanNext())
+    enable(toolbar.previous,ready and API:CanPrevious())
     enable(toolbar.hide,true)
     toolbar.hide:SetText(ready and 'Hide for 10s' or 'Close toolbar')
     enable(toolbar.background,ready and current and current._presentation)
@@ -223,12 +237,12 @@ end
 function P:HideForCapture()
     if not current or not current:IsActive() then return end
     hiddenUntil=clock+10
-    API:HideWindow(); toolbar:Hide()
+    API:HideWindow(true); toolbar:Hide()
     if GameTooltip then GameTooltip:Hide() end
 end
 API._OnSessionStarted=function(context)
     build(); current=context; P.lastAddon=context.addonID; hiddenUntil=nil
-    API:HideWindow()
+    API:HideWindow(true)
     toolbar:Show(); toolbar:Raise()
     if context._presentation and P.mode~=1 then
         local ok,reason=P:SetMode(P.mode)

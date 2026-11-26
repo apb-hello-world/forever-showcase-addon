@@ -9,7 +9,7 @@ def package(output=None):
     output = Path(output or ROOT / 'dist')
     output.mkdir(parents=True, exist_ok=True)
     specs = (
-        ('ForeverShowcase', ROOT, ('ForeverShowcase.toc', 'Core.lua', 'Theme.lua', 'UI.lua', 'Presentation.lua', 'Capture.lua', 'CaptureUI.lua', 'Commands.lua',
+        ('ForeverShowcase', ROOT, ('ForeverShowcase.toc', 'Core.lua', 'Theme.lua', 'UI.lua', 'Presentation.lua', 'Capture.lua', 'CaptureUI.lua', 'Commands.lua', 'SelfShowcase.lua',
                                  'Media/StagekeeperShell.tga', 'Media/StagekeeperButton.tga', 'Media/StagekeeperWordmark.tga')),
         ('ForeverShowcaseExample', ROOT / 'examples', ('ForeverShowcaseExample.toc', 'Example.lua')),
     )

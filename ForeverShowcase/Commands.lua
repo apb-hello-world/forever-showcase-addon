@@ -6,7 +6,10 @@ SlashCmdList.FOREVERSHOWCASE = function(input)
     local command = words[1]
     local ok, message
     if not command or command == "show" then
+        API._showSelfInSelector=false
         if API.ShowWindow then API:ShowWindow() else API.Report("/showcase list | <addon> <scene> | next | off | status | info") end
+    elseif command == "self" then
+        if API.ShowSelfScenes then API:ShowSelfScenes() end
     elseif command == "hide" then
         if API.HideWindow then API:HideWindow() end
     elseif command == "help" then

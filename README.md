@@ -22,7 +22,7 @@ No game input, arbitrary addon hooks, or replacement WoW APIs are used.
 | `/showcase help` | Command help |
 | `/showcase list` | Registered scenes, including unavailability reasons |
 | `/showcase <addon> <scene>` | Enter or restart a scene |
-| `/showcase next` | Next available scene in the current integration, wrapping |
+| `/showcase next` | Next available scene; stops at the last scene |
 | `/showcase off` | Stop and restore |
 | `/showcase status` | Active scene, deferred restoration, or failure state |
 | `/showcase info` | Current description, suggested caption and capture instructions |
@@ -63,7 +63,7 @@ The Python test dependency is `lupa==2.8`; tests explicitly use `lupa.lua51`.
 Packaging uses only the Python standard library and writes deterministic,
 allowlisted ZIPs to `dist/`. Production and example are separate archives.
 Source and companion releases: https://github.com/apb-hello-world/forever-showcase-addon.
-CurseForge publishing is pending the project ID and repository secret.
+CurseForge project: 1832297. Addon release tags publish the runtime ZIP using the CF_API_TOKEN repository Actions secret. The optional Windows companion is distributed through GitHub.
 
 ## Evidence and next steps
 
@@ -111,3 +111,9 @@ Download the Windows installer from this repository's companion releases. It ins
 - Settings ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Check for updates checks public GitHub companion releases. Download and installation require confirmation; no account or token is needed. Addon releases are ignored by the companion updater.
 
 See [RELEASING.md](RELEASING.md) for build, installer and release instructions.
+
+## Photographing Showcase itself
+
+Addon 0.6.3 includes a hidden Forever Showcase integration with library, picker, capture-list, toolbar, framing and charcoal/ivory backdrop scenes. Use `/showcase self` to reveal it for this session
+and open the selector without starting a scene. See [SHOWCASE-SCREENSHOTS.md](SHOWCASE-SCREENSHOTS.md)
+for the in-game workflow and desktop companion promotional shot list.
