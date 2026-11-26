@@ -12,3 +12,13 @@ Create a standalone transparent-background wordmark reading exactly 'Forever Sho
 Export uses measured visible-alpha bounds (58,192)-(2128,481), a ten-pixel margin,
 uniform scaling and transparent padding to 1024x256. Display at 400x100 preserves
 the same canvas ratio; no lettering is stretched. New native appearance pending.
+
+
+## Capital S correction — companion 0.6.6 / addon 0.5.1
+
+Tool: built-in image generation, transparent image edit of the existing wordmark.
+Removed the lower-right protruding foot from the capital S. The previous asset remains in Git history. Export geometry and runtime dimensions are unchanged.
+
+Exact edit prompt:
+
+Precise object edit. Edit target: attached transparent gold 'Forever Showcase' wordmark. Make ONE narrowly scoped typography correction: remove the extra pointed foot/swash jutting rightward from the bottom-right of the capital S in Showcase. The lower bowl of the capital S should end in one smooth rounded curve with NO extra downward or rightward projecting serif/foot. Preserve the upper S, its left lower curl, gold bevel, texture, lighting and thickness. Preserve every other letter, exact text 'Forever Showcase', spacing, proportions, horizontal baseline, image framing and transparent background. No plaque or background. Do not redesign the F or other characters. Deliver the corrected full wordmark with true alpha transparency.

@@ -26,7 +26,7 @@ class Packaging(unittest.TestCase):
                 for line in toc.splitlines():
                     if line and not line.startswith('#'):
                         self.assertIn('ForeverShowcase/' + line, archive.namelist())
-                self.assertIn('VERSION = "0.5.0"', archive.read('ForeverShowcase/Core.lua').decode())
+                self.assertIn('VERSION = "0.5.1"', archive.read('ForeverShowcase/Core.lua').decode())
                 for filename, dimensions in [('StagekeeperShell', (1024,1024)), ('StagekeeperButton', (512,128)), ('StagekeeperWordmark', (1024,256))]:
                     import struct
                     texture = archive.read('ForeverShowcase/Media/' + filename + '.tga')

@@ -97,7 +97,7 @@ imported capture on the desktop. See CAPTURE-WORKFLOW.md for folders, presets,
 export controls and the test checklist. 30 automated tests pass; real capture
 event timing and pixel mapping await the owner. No GitHub work or publishing.
 
-## Desktop companion 0.6.5
+## Desktop companion 0.6.6
 
 Download the Windows installer from this repository's companion releases. It installs for the current user, adds a Start menu shortcut and an uninstaller, and preserves settings and capture records in `%LOCALAPPDATA%/ForeverShowcase` across upgrades. The addon remains usable without it.
 

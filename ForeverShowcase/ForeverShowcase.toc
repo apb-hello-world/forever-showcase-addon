@@ -2,7 +2,7 @@
 ## Title: Forever Showcase
 ## Notes: Developer scene lifecycle and screenshot companion.
 ## Author: Alex
-## Version: 0.5.0
+## Version: 0.5.1
 
 ## SavedVariables: ForeverShowcaseDB
 
