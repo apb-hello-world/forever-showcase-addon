@@ -33,7 +33,7 @@ class Companion(unittest.TestCase):
         app = App.__new__(App)
         app.canvas = Mock(); app.preview='preview'; app.empty_text='text'; app.dimensions='dimensions'
         app.images=None; app.current=lambda: {'status':'Missing screenshot'}
-        for loading, error, expected in ((True,None,'Preparing preview'), (False,None,'Choose original'),
+        for loading, error, expected in ((True,None,'Preparing preview'), (False,None,'Screenshot needs matching'),
                                          (False,'Cannot decode file','Preview unavailable')):
             app.rendering=loading; app.render_error=error; app.canvas.reset_mock()
             app.draw_preview()
@@ -97,3 +97,28 @@ class Companion(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class AdjacentCaptureMatching(unittest.TestCase):
+    def test_adjacent_seconds_prefer_exact_intervals(self):
+        with TemporaryDirectory() as tmp:
+            first=Path(tmp)/'WoWScrnShot_112526_204330.jpg'
+            second=Path(tmp)/'WoWScrnShot_112526_204331.jpg'
+            for p in (first,second):Image.new('RGB',(100,80)).save(p)
+            rows=[record(id='first',localTime='112526_204330',localCompleted='112526_204330'),
+                  record(id='second',localTime='112526_204331',localCompleted='112526_204331')]
+            results=match_batch(rows,tmp)
+            self.assertEqual(results['first'],(first.resolve(),'Ready'))
+            self.assertEqual(results['second'],(second.resolve(),'Ready'))
+            duplicate=Path(tmp)/'WoWScrnShot_112526_204330_1.jpg'
+            Image.new('RGB',(100,80)).save(duplicate)
+            self.assertIsNone(match_batch(rows,tmp)['first'][0])
+
+    def test_tolerance_fallback_and_shared_candidate_remain_conservative(self):
+        with TemporaryDirectory() as tmp:
+            image=Path(tmp)/'WoWScrnShot_112526_130001.jpg'
+            Image.new('RGB',(100,80)).save(image)
+            row=record(localTime='112526_130000',localCompleted='112526_130000')
+            self.assertEqual(match_batch([row],tmp)[row['id']][0],image.resolve())
+            same=record(id='exact',localTime='112526_130001',localCompleted='112526_130001')
+            self.assertTrue(all(path is None for path,status in match_batch([row,same],tmp).values()))

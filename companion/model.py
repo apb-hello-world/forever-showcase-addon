@@ -212,7 +212,7 @@ def open_image(path):
 
 
 def candidates(record, directory):
-    """Conservative filename-time AND dimensions match. Never choose newest."""
+    """Prefer the recorded interval; use clock tolerance only without exact matches."""
     start = datetime.strptime(record['localTime'], '%m%d%y_%H%M%S') - timedelta(seconds=1)
     end = datetime.strptime(record['localCompleted'], '%m%d%y_%H%M%S') + timedelta(seconds=1)
     matches = []
@@ -230,7 +230,10 @@ def candidates(record, directory):
                     matches.append(path.resolve())
         except (OSError, ValueError):
             continue
-    return sorted(matches)
+    exact_start=datetime.strptime(record['localTime'], '%m%d%y_%H%M%S')
+    exact_end=datetime.strptime(record['localCompleted'], '%m%d%y_%H%M%S')
+    exact=[path for path in matches if exact_start<=datetime.strptime(SHOT.match(path.name)[1], '%m%d%y_%H%M%S')<=exact_end]
+    return sorted(exact or matches)
 
 
 def match_batch(records, directory):
@@ -240,8 +243,9 @@ def match_batch(records, directory):
         for path in paths:
             owners.setdefault(path, set()).add(identity)
     return {r['id']: (paths[0] if len(paths := matches[r['id']]) == 1 and len(owners[paths[0]]) == 1 and not r.get('review', False) else None,
-                     'Review required' if r.get('review', False) else 'Missing screenshot' if not paths else
-                     'Choose original' if len(paths) != 1 or len(owners[paths[0]]) != 1 else 'Ready')
+                     'The scene changed before the screenshot finished.' if r.get('review', False) else 'No matching screenshot was found in the configured folder.' if not paths else
+                     'Multiple screenshots match this capture time.' if len(paths) != 1 else
+                     'This screenshot also matches another capture record.' if len(owners[paths[0]]) != 1 else 'Ready')
             for r in records}
 
 

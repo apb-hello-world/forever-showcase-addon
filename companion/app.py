@@ -549,7 +549,7 @@ class App:
         if not self.images:
             text = ('Preparing preview…' if self.rendering else
                     'Preview unavailable.\n\n' + self.render_error if self.render_error else
-                    'Choose original to resolve this capture.\n\n' + r.get('status', 'Missing original') if r else
+                    'Screenshot needs matching.\n\n' + ('Multiple possible matches.' if r.get('status')=='Choose original' else r.get('status', 'No matching screenshot found.')) + '\n\nUse Choose original to select the full-screen screenshot.' if r else
                     'Capture in WoW\n\nDraw an area and click Capture. Open Captures and choose Send & reload.\n\nYour full-size screenshot stays safe. The companion crops and styles a separate export.')
             self.canvas.itemconfigure(self.empty_text, text=text, state='normal')
             self.canvas.itemconfigure(self.dimensions, text='')

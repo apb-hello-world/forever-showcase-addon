@@ -48,8 +48,10 @@ installs/accounts use Browse. The manifest may not exist until the first send.
 The companion polls every two seconds and waits for stable manifest metadata.
 It parses a bounded literal-data subset of Lua; it never executes SavedVariables.
 Only explicitly sent records import. Screenshot matches require a filename time
-within the capture interval (one-second tolerance) and exact full-screen pixel
-dimensions. Multiple possible files, overlapping records, and interrupted scenes
+within the recorded capture interval and exact full-screen pixel dimensions.
+Only when that interval has no matches does matching use a one-second tolerance.
+This keeps neighboring captures one second apart distinct. Multiple possible
+files, overlapping records, and interrupted scenes
 require **Choose original**. It never selects the newest file as a fallback.
 These are conservative matching heuristics, not an exact filename supplied by WoW.
 Verify the first real capture and any uncertain match before exporting.
