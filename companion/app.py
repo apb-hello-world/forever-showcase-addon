@@ -217,6 +217,17 @@ class App:
         self.nodes.append(('button' if button else 'widget', item, x, y, width, height, widget))
         return widget
 
+    def field(self, widget, x, y, width, height):
+        border=self.canvas.create_polygon(0,0,1,0,1,1,0,1,fill='#f7e8ca',outline='#a18456',smooth=True)
+        self.nodes.append(('field',border,x,y,width,height,widget))
+        options=widget.keys()
+        if 'highlightthickness' in options:widget.configure(highlightthickness=0)
+        if 'borderwidth' in options:widget.configure(borderwidth=0)
+        widget.bind('<FocusIn>',lambda e:self.canvas.itemconfigure(border,outline='#704b27'),add='+')
+        widget.bind('<FocusOut>',lambda e:self.canvas.itemconfigure(border,outline='#a18456'),add='+')
+        self.widget(widget,x+5,y+3,width-10,height-6)
+        return widget
+
     def button(self, label, x, y, width, command, height=32):
         return ArtButton(self, label, x, y, width, command, height)
 
@@ -225,16 +236,20 @@ class App:
         self.wordmark = self.canvas.create_image(0, 0, anchor='nw')
         self.text('Captures', 62, 151, 165, 16, IVORY, True)
         self.text('Finish', 273, 151, 170, 16, IVORY, True)
-        self.selection_note = self.text('Applies to selected capture',273,179,175,10,IVORY)
+        self.selection_note = self.text('Select a capture to edit',272,197,170,10,INK)
         self.button('⚙', 782, 92, 32, self.setup, 28)
         self.button('−', 820, 92, 32, self.minimize, 28)
         self.button('□', 858, 92, 32, self.maximize, 28)
         self.button('×', 896, 92, 32, self.close, 28)
         self.canvas.bind('<ButtonPress-1>', self.drag_start)
         self.canvas.bind('<B1-Motion>', self.drag_move)
+        style=ttk.Style(self.root)
+        style.theme_use('clam')
+        style.configure('Showcase.TCombobox',fieldbackground='#f7e8ca',background='#e0cba4',foreground=INK,borderwidth=0,arrowsize=12)
+        style.map('Showcase.TCombobox',fieldbackground=[('readonly','#f7e8ca')],foreground=[('readonly',INK)])
         self.listbox = tk.Listbox(self.canvas, bg=WOOD, fg=IVORY, selectbackground='#6b3930',
                                  selectforeground='white', borderwidth=0, highlightthickness=0,
-                                 activestyle='dotbox', exportselection=False, selectmode='extended')
+                                 activestyle='dotbox', exportselection=False, selectmode='extended',cursor='hand2',relief='flat',selectborderwidth=4)
         self.widget(self.listbox, 55, 206, 172, 260)
         self.listbox.bind('<Button-1>', self.click_capture)
         self.listbox.bind('<Control-a>', self.select_all)
@@ -242,9 +257,9 @@ class App:
         self.count_text = self.text('', 57, 486, 170, 11, IVORY)
         self.button('Import image', 66, 530, 150, self.import_image)
         self.button('Remove record', 66, 570, 150, self.remove, 28)
-        self.text('Preset', 272, 210, 165, 12, INK, True)
-        combo = ttk.Combobox(self.canvas, textvariable=self.preset, values=list(self.presets), state='readonly')
-        self.preset_combo = self.widget(combo, 272, 236, 166, 28)
+        self.text('Preset', 272, 218, 165, 12, INK, True)
+        combo = ttk.Combobox(self.canvas, textvariable=self.preset, values=list(self.presets), state='readonly',style='Showcase.TCombobox')
+        self.preset_combo = self.field(combo, 272, 241, 166, 30)
         combo.bind('<<ComboboxSelected>>', lambda _: self.apply_preset())
         for i, (key, maximum) in enumerate((('padding', 256), ('radius', 256), ('border', 32), ('shadow', 64))):
             y = 285 + i * 43
@@ -254,7 +269,7 @@ class App:
                               command=self.request_render, highlightthickness=1, highlightbackground='#a18456')
             spin.bind('<Return>', lambda _: self.request_render())
             spin.bind('<FocusOut>', lambda _: self.request_render())
-            self.widget(spin, 380, y, 58, 28)
+            self.field(spin, 380, y, 58, 28)
         self.button('Background color', 283, 450, 144, lambda: self.choose_color('background'), 28)
         self.button('Border color', 283, 486, 144, lambda: self.choose_color('border_color'), 28)
         self.check = self.button('Transparent PNG: Off', 283, 522, 144, self.toggle_transparency, 28)
@@ -263,8 +278,8 @@ class App:
         self.preview_button_start = len(self.art_buttons)
         self.title_text = self.text('Your screenshots, ready for the gallery', 507, 190, 405, 19, INK, True)
         self.subtitle = self.text('The same framing across every scene.', 507, 244, 400, 12)
-        mode = ttk.Combobox(self.canvas, textvariable=self.view, values=['Original', 'Crop', 'Styled'], state='readonly')
-        self.widget(mode, 507, 280, 130, 27)
+        mode = ttk.Combobox(self.canvas, textvariable=self.view, values=['Original', 'Crop', 'Styled'], state='readonly',style='Showcase.TCombobox')
+        self.field(mode, 507, 280, 130, 30)
         mode.bind('<<ComboboxSelected>>', lambda _: self.draw_preview())
         self.preview = self.canvas.create_image(0, 0)
         self.empty_text = self.text('Capture in WoW\n\nDraw an area and click Capture. Open Captures and choose Send & reload.\n\nYour full-size screenshot stays safe. The companion crops and styles a separate export.', 530, 345, 350, 14)
@@ -312,6 +327,13 @@ class App:
             self.canvas.coords(item, self.ox+x*s, self.oy+y*s)
         self.photos = photos
         for kind, item, x, y, width, height, extra in self.nodes:
+            if kind == 'field':
+                left,top=self.ox+x*s,self.oy+y*s
+                right,bottom=left+width*s,top+height*s
+                radius=5*s
+                self.canvas.coords(item,left+radius,top,right-radius,top,right,top,right,top+radius,right,bottom-radius,right,bottom,right-radius,bottom,left+radius,bottom,left,bottom,left,bottom-radius,left,top+radius,left,top)
+                self.canvas.itemconfigure(item,width=max(1,round(s)))
+                continue
             self.canvas.coords(item, self.ox+x*s, self.oy+y*s)
             if kind == 'text':
                 self.canvas.itemconfigure(item, width=width*s, font=('Segoe UI', -max(10, round(height*s)), 'bold' if extra else 'normal'))
@@ -352,7 +374,8 @@ class App:
         self.selected_ids.intersection_update(r['id'] for r in self.records)
         if not self.selected_ids and self.selected:self.selected_ids.add(self.selected)
         for i,r in enumerate(self.visible_records):
-            self.listbox.insert('end',r.get('name',r['scene'])[:40])
+            self.listbox.insert('end','  '+r.get('name',r['scene'])[:40])
+            self.listbox.itemconfigure(i,background='#38271b' if i%2==0 else '#302116',foreground=IVORY)
             if r['id'] in self.selected_ids:self.listbox.selection_set(i)
             if r['id']==self.selected:self.listbox.activate(i)
         count=len(self.selected_ids)
@@ -521,7 +544,7 @@ class App:
             y = 295+i*75
             self.text(label,507,y,400,12,INK,True)
             var=tk.StringVar(value=getattr(self,key)); self.folder_values[key]=var
-            self.widget(tk.Entry(self.canvas,textvariable=var,bg='#f7e8ca',fg=INK,relief='flat'),507,y+25,305,28)
+            self.field(tk.Entry(self.canvas,textvariable=var,bg='#f7e8ca',fg=INK,relief='flat'),507,y+25,305,30)
             self.button('Browse…',822,y+25,85,lambda k=key:self.browse_folder(k),28)
         self.update_button = self.button('Check for updates',507,512,165,self.check_updates,28)
         self.text('Companion '+VERSION,689,520,220,11)

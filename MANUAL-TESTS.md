@@ -77,4 +77,11 @@ addon works when the companion is closed.
 - Change padding/border/transparent settings with two selected. Select each separately and confirm its style is retained; unselected captures stay unchanged.
 - Save a multi-selection, then save again: all selected exports appear with unique filenames. Save to folder chooses a destination. A missing original is reported without discarding other successful exports.
 - Run the per-user installer, launch from Start, and run the installer again. Verify settings/captures persist and only one app entry appears in Installed apps.
-- Settings → Check for updates: before companion releases exist, expect no newer version. After a newer companion release is published, verify confirmation, download, checksum verification, installer launch and retained settings.
+- Settings â†’ Check for updates: before companion releases exist, expect no newer version. After a newer companion release is published, verify confirmation, download, checksum verification, installer launch and retained settings.
+
+
+## Companion 0.6.1 update test
+- From installed 0.6.0, open Settings → Check for updates. Accept the 0.6.1 download and complete the installer. Confirm capture records, styles and export folders remain intact.
+- Verify the Finish selection hint is inside the panel and readable; capture rows have alternating shading and padding before selection.
+- Verify matching rounded borders on Finish controls and Settings paths; typing, spin buttons and dropdown selection still work.
+- In Full-size preview, Fit mode and smaller images should have no scrollbars. Zoom with the mouse wheel until overflow appears, then zoom out and verify the scrollbars disappear. Drag to pan an overflowing image.
