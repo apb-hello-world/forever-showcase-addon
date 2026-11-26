@@ -1,7 +1,8 @@
 # Forever Showcase API v1
 
 Global: `ForeverShowcase`. Runtime version: `VERSION = "0.5.2"`.
-Contract version: `API_VERSION = 1`. Calls use Lua colon syntax. API v1 is the
+Contract version: `API_VERSION = 1`. Lifecycle methods use Lua colon syntax;
+`ForeverShowcase.Report(message)` is a dot-call logging helper. API v1 is the
 integration target after the automated lifecycle tests; native validation remains
 pending. Incompatible contract changes require a new API version.
 
@@ -115,7 +116,7 @@ and capability rules. All ordinary adapters continue to work unchanged.
 ## Optional capture UI (0.4.0)
 
 `CAPABILITIES.capture` advertises player-operated capture controls. No adapter update
-is required. Fit windows uses the existing presentation roots; Draw area works
+is required. Auto-fit area uses the existing presentation roots; Draw area works
 without them. Crops are saved per addon, shared across scenes. Screenshot records
-contain only identifiers, time and pixel bounds; no scene fixture or frame objects.
+contain identifiers, display titles/names, time and pixel bounds; no scene fixture or frame objects.
 See CAPTURE-WORKFLOW.md. The desktop companion is always optional.
