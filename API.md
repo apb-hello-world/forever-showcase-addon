@@ -1,6 +1,6 @@
 # Forever Showcase API v1
 
-Global: `ForeverShowcase`. Runtime version: `VERSION = "0.5.1"`.
+Global: `ForeverShowcase`. Runtime version: `VERSION = "0.5.2"`.
 Contract version: `API_VERSION = 1`. Calls use Lua colon syntax. API v1 is the
 integration target after the automated lifecycle tests; native validation remains
 pending. Incompatible contract changes require a new API version.

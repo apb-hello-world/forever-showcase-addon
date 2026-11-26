@@ -58,6 +58,7 @@ class Capture(unittest.TestCase):
             assert(#c:DB().captures==1 and c.flash:IsShown())
             local r=c:DB().captures[1]
             assert(r.x==100 and r.y==200 and r.width==600 and not r.exported)
+            assert(r.addonTitle=='Test')
             assert(a.Presentation.toolbar:IsShown())
             c:Export(); assert(reloaded and r.exported and not a:Status())
         ''')

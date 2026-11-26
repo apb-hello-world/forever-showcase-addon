@@ -97,13 +97,14 @@ imported capture on the desktop. See CAPTURE-WORKFLOW.md for folders, presets,
 export controls and the test checklist. 30 automated tests pass; real capture
 event timing and pixel mapping await the owner. No GitHub work or publishing.
 
-## Desktop companion 0.6.6
+## Desktop companion 0.6.7
 
 Download the Windows installer from this repository's companion releases. It installs for the current user, adds a Start menu shortcut and an uninstaller, and preserves settings and capture records in `%LOCALAPPDATA%/ForeverShowcase` across upgrades. The addon remains usable without it.
 
 - Click a capture to edit it. Ctrl-click adds/removes captures and previews the newly added capture. Shift-click selects a range; Ctrl+A in the list selects all.
 - The Finish controls apply edits to every selected capture. Each capture retains its own saved style. Selecting more captures alone does not overwrite their styles.
-- Save exports all selected captures in the current Original, Crop or Styled mode. Save to folder chooses a batch destination. Existing files and original screenshots are preserved; unresolved captures are reported separately.
+- Settings → Default save location sets the base export path. Save places images in an automatically created subfolder for the captured addon (display name, or addon ID for older records).
+- Save exports all selected captures in the current Original, Crop or Styled mode, grouped into addon subfolders. Save to folder chooses a different base path for that batch. Single-image Save As honors the exact chosen filename. Existing files and original screenshots are preserved; unresolved captures are reported separately.
 - Full-size preview opens a separate resizable window with Fit window, 100%, mouse-wheel zoom and drag-to-pan controls. Scrollbars appear only when the image overflows.
 - Settings ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Check for updates checks public GitHub companion releases. Download and installation require confirmation; no account or token is needed. Addon releases are ignored by the companion updater.
 

@@ -98,3 +98,10 @@ Run from the project root:
 The desktop runtime uses Python 3.12, Tkinter and Pillow; PyInstaller builds the
 portable Windows folder. No adapter changes are needed for capture. API v1 and
 `SetPresentation({frames=..., background=...})` remain unchanged.
+
+
+## Default save location
+
+Set **Settings → Default save location** to the base folder for exports. Save and batch Save automatically use `<base>/<addon name>/`; mixed-addon selections split into separate addon folders. New captures from addon 0.5.2 include the display name. Existing captures fall back to their addon ID. Manual imports use `Manual import`.
+
+Single-image Save As keeps the exact filename you choose. Batch Save to folder chooses a base folder and still groups by addon. Existing images are not moved and saved files are not overwritten.

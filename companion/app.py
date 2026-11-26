@@ -20,7 +20,7 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont
 from companion import updates
 from companion.version import VERSION
 from companion.preview import PreviewWindow
-from companion.batch import export_batch
+from companion.batch import export_batch, addon_directory
 
 from companion.model import (Style, PRESETS, read_manifest, match_batch, open_image,
                              crop_image, render, save_image, copy_image)
@@ -574,9 +574,9 @@ class App:
     def build_settings(self):
         start, buttons = len(self.nodes), len(self.art_buttons)
         self.text('Settings',507,190,400,22,INK,True)
-        self.text('Connect your local files and choose where exports go.',507,240,395,12)
+        self.text('Choose a default save location. Images are saved in a subfolder for each addon.',507,240,395,12)
         self.folder_values = {}
-        for i,(key,label) in enumerate((('manifest','Capture instructions (ForeverShowcase.lua)'),('screenshots','WoW Screenshots folder'),('output','Default export folder'))):
+        for i,(key,label) in enumerate((('manifest','Capture instructions (ForeverShowcase.lua)'),('screenshots','WoW Screenshots folder'),('output','Default save location'))):
             y = 295+i*75
             self.text(label,507,y,400,12,INK,True)
             var=tk.StringVar(value=getattr(self,key)); self.folder_values[key]=var
@@ -809,18 +809,19 @@ class App:
         r = self.current()
         stem = re.sub(r'[^A-Za-z0-9_.-]+', '-', r['addon']+'-'+r.get('name',r['scene'])).strip('.-')[:100] or 'showcase'
         name = stem + '-' + datetime.now().strftime('%Y%m%d-%H%M%S') + '.png'
-        if save_as:
-            path = filedialog.asksaveasfilename(parent=self.root, initialdir=self.output, initialfile=name,
-                                              defaultextension='.png', filetypes=[('PNG', '*.png'), ('JPEG (white transparency)', '*.jpg')])
-            if not path:
-                return
-        else:
-            path = Path(self.output) / name
-            index = 2
-            while path.exists():
-                path = Path(self.output) / f'{Path(name).stem}-{index}.png'; index += 1
         try:
-            # Reject every known original, not only the selected capture's file.
+            if save_as:
+                path = filedialog.asksaveasfilename(parent=self.root, initialdir=self.output, initialfile=name,
+                                                  defaultextension='.png', filetypes=[('PNG', '*.png'), ('JPEG (white transparency)', '*.jpg')])
+                if not path:return
+            else:
+                if Path(self.output).expanduser().resolve()==Path(self.screenshots).resolve():
+                    raise ValueError('Choose a default save location outside the WoW Screenshots folder.')
+                destination=addon_directory(self.output,r)
+                path=destination/name
+                index=2
+                while path.exists():
+                    path=destination/f'{Path(name).stem}-{index}.png';index+=1
             if Path(path).resolve() in {Path(v['source']).resolve() for v in self.records if v.get('source')}:
                 raise ValueError('Choose a different destination; original screenshots are preserved.')
             if Path(path).resolve().parent == Path(self.screenshots).resolve():

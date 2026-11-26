@@ -140,7 +140,7 @@ controller:SetScript('OnEvent',function(_,event)
         end
         r.captureNumber=count+1; db.captureCounts[key]=r.captureNumber
         local title=r.scene
-        for _,row in ipairs(API:List()) do if row.addon==r.addon and row.id==r.scene then title=row.title; break end end
+        for _,row in ipairs(API:List()) do if row.addon==r.addon and row.id==r.scene then title=row.title; r.addonTitle=row.addonTitle; break end end
         r.name=title..' capture '..r.captureNumber
         r.requestedAt=p.requestedAt; r.completedAt=time()
         r.localTime=p.localTime; r.localCompleted=date('%m%d%y_%H%M%S',r.completedAt)

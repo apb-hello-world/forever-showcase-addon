@@ -172,6 +172,8 @@ def validate_record(row):
             raise ManifestError('Invalid local capture time.') from error
     if isinstance(row.get('name'), str):
         result['name'] = row['name'][:512]
+    if isinstance(row.get('addonTitle'), str):
+        result['addonTitle'] = row['addonTitle'][:512]
     result['review'] = bool(row.get('review'))
     result['exported'] = row.get('exported') is True
     return result

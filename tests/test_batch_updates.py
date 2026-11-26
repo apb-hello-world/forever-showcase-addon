@@ -5,7 +5,7 @@ from pathlib import Path
 from dataclasses import asdict
 from unittest.mock import patch
 from PIL import Image
-from companion.batch import export_batch
+from companion.batch import export_batch, addon_directory
 from companion.model import Style
 from companion import updates
 
@@ -16,10 +16,24 @@ class BatchAndUpdates(unittest.TestCase):
             before=source.read_bytes()
             row=dict(id='a',addon='Test',scene='Editor',source=str(source),x=0,y=0,width=20,height=10,screenWidth=40,screenHeight=30,style=asdict(Style(padding=0,shadow=0,border=0,radius=0)))
             saved,errors=export_batch([row,dict(row,id='b'),dict(row,id='c',source=None)],root/'exports','Styled',root/'screenshots',[source])
+            self.assertEqual(Path(saved[0]).parent,root/'exports'/'Test')
             self.assertEqual(len(saved),2);self.assertEqual(len(errors),1);self.assertNotEqual(saved[0],saved[1])
             with Image.open(saved[0]) as image:self.assertEqual(image.size,(20,10))
             self.assertEqual(source.read_bytes(),before)
             with self.assertRaises(ValueError):export_batch([row],root/'screenshots','Styled',root/'screenshots',[source])
+
+    def test_mixed_addons_and_display_name_fallback(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);source=root/'source.png';Image.new('RGB',(10,10),'red').save(source)
+            row=dict(addon='spellwright',addonTitle='Spellwright',scene='Editor',source=str(source),style=asdict(Style()))
+            saved,errors=export_batch([row,dict(row,addon='wayside',addonTitle='Wayside'),dict(row,addon='legacy',addonTitle='')],root/'exports','Original',root/'screenshots',[source])
+            self.assertEqual(errors,[])
+            self.assertEqual({Path(p).parent.name for p in saved},{'Spellwright','Wayside','legacy'})
+            for name in ('../outside','C:\\elsewhere','CON','...','|cffffffffSpellwright|r'):
+                folder=addon_directory(root,dict(addon=name))
+                self.assertEqual(folder.parent,root.resolve())
+                self.assertNotIn(folder.name,('CON','..','.'))
+            self.assertEqual(addon_directory(root,dict(addon='|cffffffffSpellwright|r')).name,'Spellwright')
 
     def release(self,number='0.7.0'):
         tag='companion-v'+number;name=f'ForeverShowcaseCompanion-Setup-{number}.exe'
