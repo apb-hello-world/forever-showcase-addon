@@ -1,0 +1,15 @@
+## Interface: 16001
+## Title: Forever Showcase
+## Notes: Developer scene lifecycle and screenshot companion.
+## Author: Alex
+## Version: 0.5.0
+
+## SavedVariables: ForeverShowcaseDB
+
+Core.lua
+Theme.lua
+UI.lua
+Presentation.lua
+Capture.lua
+CaptureUI.lua
+Commands.lua

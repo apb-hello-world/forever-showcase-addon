@@ -1,0 +1,66 @@
+name: Build and release
+on:
+  push:
+    branches: [main]
+    tags: ['companion-v*', 'addon-v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-dev.txt -r requirements-companion.txt
+      - run: python -m unittest discover -s tests -v
+      - run: python tools/package.py
+      - run: python tools/build_companion.py
+      - name: Install installer compiler
+        run: choco install innosetup --no-progress -y
+      - run: python tools/build_installer.py
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: python tools/check_release_tag.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: showcase-build
+          path: |
+            dist/ForeverShowcase-*.zip
+            dist/ForeverShowcaseCompanion-Setup-*.exe
+            dist/ForeverShowcaseCompanion-Setup-*.sha256
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: build
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: showcase-build
+          path: dist
+      - name: Publish tagged component
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        shell: pwsh
+        run: |
+          if ($env:RELEASE_TAG.StartsWith('companion-v')) {
+            $assets = @(Get-ChildItem dist/ForeverShowcaseCompanion-Setup-* | ForEach-Object FullName)
+          } else {
+            $assets = @(Get-ChildItem dist/ForeverShowcase-*.zip | ForEach-Object FullName)
+          }
+          gh release view $env:RELEASE_TAG --repo $env:GH_REPO *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $env:RELEASE_TAG --repo $env:GH_REPO --verify-tag --title $env:RELEASE_TAG --generate-notes @assets
+          } else {
+            gh release upload $env:RELEASE_TAG --repo $env:GH_REPO --clobber @assets
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }

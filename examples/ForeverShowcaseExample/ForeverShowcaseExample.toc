@@ -1,0 +1,7 @@
+## Interface: 16001
+## Title: Forever Showcase Example (developer fixture)
+## Notes: Nonvisual, in-memory adapter demonstrating the Showcase v1 contract.
+## Version: 0.1.0
+## OptionalDeps: ForeverShowcase
+
+Example.lua

@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+dist/
+
+build/
+design/qa/
+__pycache__/
+
+.impeccable/
+design/installation-*.json
+design/caption-alignment-*.png

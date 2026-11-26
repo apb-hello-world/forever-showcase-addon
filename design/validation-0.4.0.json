@@ -1,0 +1,21 @@
+{
+  "version": "0.4.0",
+  "automatedTests": 30,
+  "installedFiles": 11,
+  "exampleInstalled": false,
+  "companionSha256": "78d9820523d3a8db6ea9368eed7f2327cfad63d963ad54d84f63ced674d9c132",
+  "desktopVerified": [
+    "packaged launch",
+    "synthetic batch import",
+    "styled preview of the matched crop",
+    "minimum window composition",
+    "Save PNG",
+    "Copy image in normal desktop process"
+  ],
+  "pending": [
+    "real WoW capture and crop alignment",
+    "Save As completion",
+    "paste into owner editor"
+  ],
+  "review": "ship: two listed fixes resolved"
+}
