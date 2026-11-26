@@ -22,7 +22,7 @@ def viewport_tile(image, scaled_size, bounds):
 class PreviewWindow(tk.Toplevel):
     def __init__(self, parent, image, title):
         super().__init__(parent)
-        self.title('Forever Showcase â€” '+title)
+        self.title('Forever Showcase - '+title)
         self.configure(bg='#28190f')
         self.image = image.copy()
         self.fit = True
@@ -34,7 +34,7 @@ class PreviewWindow(tk.Toplevel):
         self.geometry(f'{min(1200,self.winfo_screenwidth()-100)}x{min(850,self.winfo_screenheight()-100)}')
         self.minsize(480,320)
         bar=tk.Frame(self,bg='#28190f',padx=12,pady=10);bar.pack(fill='x')
-        for label,command in [('Fit window',self.fit_window),('100%',lambda:self.set_zoom(1)),('âˆ’',lambda:self.set_zoom(self.zoom/1.25)),('+',lambda:self.set_zoom(self.zoom*1.25))]:
+        for label,command in [('Fit window',self.fit_window),('100%',lambda:self.set_zoom(1)),('-',lambda:self.set_zoom(self.zoom/1.25)),('+',lambda:self.set_zoom(self.zoom*1.25))]:
             tk.Button(bar,text=label,command=command,cursor='hand2',bg='#48161b',fg='#f9ebcc',activebackground='#6b2830',activeforeground='white',relief='flat',padx=12).pack(side='left',padx=3)
         self.info=tk.Label(bar,bg='#28190f',fg='#f9ebcc');self.info.pack(side='right')
         body=tk.Frame(self,bg='#28190f');self.body=body;body.pack(fill='both',expand=True)
@@ -135,7 +135,7 @@ class PreviewWindow(tk.Toplevel):
         self.zoom_anchor=None
         if not need_x:self.canvas.xview_moveto(0)
         if not need_y:self.canvas.yview_moveto(0)
-        self.info.configure(text=f'{self.image.width} Ã— {self.image.height} px  Â·  {self.zoom:.0%}')
+        self.info.configure(text=f'{self.image.width} x {self.image.height} px  |  {self.zoom:.0%}')
         self.paint()
 
     def paint(self):
