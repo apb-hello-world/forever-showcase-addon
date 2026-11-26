@@ -16,7 +16,7 @@ class BatchAndUpdates(unittest.TestCase):
             before=source.read_bytes()
             row=dict(id='a',addon='Test',scene='Editor',source=str(source),x=0,y=0,width=20,height=10,screenWidth=40,screenHeight=30,style=asdict(Style(padding=0,shadow=0,border=0,radius=0)))
             saved,errors=export_batch([row,dict(row,id='b'),dict(row,id='c',source=None)],root/'exports','Styled',root/'screenshots',[source])
-            self.assertEqual(Path(saved[0]).parent,root/'exports'/'Test')
+            self.assertEqual(Path(saved[0]).parent,(root/'exports'/'Test').resolve())
             self.assertEqual(len(saved),2);self.assertEqual(len(errors),1);self.assertNotEqual(saved[0],saved[1])
             with Image.open(saved[0]) as image:self.assertEqual(image.size,(20,10))
             self.assertEqual(source.read_bytes(),before)
