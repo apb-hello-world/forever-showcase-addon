@@ -73,9 +73,16 @@ class DesktopSelection(unittest.TestCase):
         dialog.width_850();self.assertEqual(dialog.height.get(),'425')
         dialog.export();finish()
         files=list((Path(self.app.output)/'Test').rglob('*.png'));self.assertEqual(len(files),2)
+        for path in files:
+            with Image.open(path) as kept:self.assertEqual(kept.size,(200,100))
+        self.assertIn('Smaller images stay',dialog.summary.get())
+        dialog.shrink_box.invoke();self.assertFalse(dialog.options().only_shrink)
+        dialog.export();finish()
+        files=list((Path(self.app.output)/'Test').rglob('*.png'));self.assertEqual(len(files),3)
         with Image.open(next(p for p in files if '850x425' in p.name)) as resized:self.assertEqual(resized.size,(850,425))
         dialog.reset();self.assertTrue(dialog.original);self.assertEqual(dialog.width.get(),'200')
         self.assertEqual(dialog.subfolder.get(),'')
+        self.assertTrue(dialog.only_shrink.get())
         self.assertLessEqual(dialog.export_button.winfo_rooty()+dialog.export_button.winfo_height(),dialog.winfo_rooty()+dialog.winfo_height())
         dialog.close_window()
 

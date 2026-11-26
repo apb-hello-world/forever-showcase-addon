@@ -17,6 +17,7 @@ class ExportWindow(tk.Toplevel):
         self.transient(app.root)
         self.format=tk.StringVar(value='PNG');self.quality=tk.StringVar(value='95')
         self.width=tk.StringVar(value=str(reference[0]));self.height=tk.StringVar(value=str(reference[1]))
+        self.only_shrink=tk.BooleanVar(value=True)
         self.lock=tk.BooleanVar(value=True);self.fit=tk.StringVar(value='Fit inside')
         self.folder=tk.StringVar(value=app.output)
         self.subfolder=tk.StringVar(value="")
@@ -38,19 +39,21 @@ class ExportWindow(tk.Toplevel):
         self.label('Width (px)',6,0);self.entry(self.width,6,1,12)
         self.label('Height (px)',7,0);self.entry(self.height,7,1,12)
         tk.Checkbutton(f,text='Maintain aspect ratio',variable=self.lock,command=self.lock_changed,bg=WOOD,fg=IVORY,activebackground=WOOD,activeforeground=IVORY,selectcolor='#48161b',cursor='hand2').grid(row=8,column=0,columnspan=3,sticky='w',pady=5)
-        self.label('When unlocked',9,0)
-        self.fit_box=self.combo(self.fit,['Fit inside','Fill / crop','Stretch'],9,1)
+        self.shrink_box=tk.Checkbutton(f,text='Only shrink larger images',variable=self.only_shrink,command=self.refresh_summary,bg=WOOD,fg=IVORY,activebackground=WOOD,activeforeground=IVORY,selectcolor='#48161b',cursor='hand2')
+        self.shrink_box.grid(row=9,column=0,columnspan=3,sticky='w',pady=5)
+        self.label('When unlocked',10,0)
+        self.fit_box=self.combo(self.fit,['Fit inside','Fill / crop','Stretch'],10,1)
         self.fit_box.bind('<<ComboboxSelected>>',lambda e:self.refresh_summary())
-        tk.Label(f,textvariable=self.summary,bg=WOOD,fg=IVORY,justify='left',anchor='nw',height=3,wraplength=540,font=('Segoe UI',10)).grid(row=10,column=0,columnspan=3,sticky='w',pady=(6,10))
-        self.label('Base export folder',11,0,3)
-        destination=tk.Frame(f,bg=WOOD);destination.grid(row=12,column=0,columnspan=3,sticky='ew',pady=(4,8))
+        tk.Label(f,textvariable=self.summary,bg=WOOD,fg=IVORY,justify='left',anchor='nw',height=4,wraplength=540,font=('Segoe UI',10)).grid(row=11,column=0,columnspan=3,sticky='w',pady=(6,10))
+        self.label('Base export folder',12,0,3)
+        destination=tk.Frame(f,bg=WOOD);destination.grid(row=13,column=0,columnspan=3,sticky='ew',pady=(4,8))
         destination.columnconfigure(0,weight=1)
         tk.Entry(destination,textvariable=self.folder,bg=PAPER,fg=INK,relief='flat',highlightthickness=1,highlightbackground='#a18456',width=52).grid(row=0,column=0,sticky='ew',ipady=5)
         self.button(destination,'Browse...',self.browse).grid(row=0,column=1,padx=(10,0))
-        self.label('Subfolder (optional)',13,0)
-        self.entry(self.subfolder,13,1,26)
-        tk.Label(f,textvariable=self.status,bg=WOOD,fg=IVORY,justify='left',anchor='nw',height=4,wraplength=540,font=('Segoe UI',10)).grid(row=14,column=0,columnspan=3,sticky='w',pady=(8,8))
-        actions=tk.Frame(f,bg=WOOD);actions.grid(row=15,column=0,columnspan=3,sticky='ew')
+        self.label('Subfolder (optional)',14,0)
+        self.entry(self.subfolder,14,1,26)
+        tk.Label(f,textvariable=self.status,bg=WOOD,fg=IVORY,justify='left',anchor='nw',height=4,wraplength=540,font=('Segoe UI',10)).grid(row=15,column=0,columnspan=3,sticky='w',pady=(8,8))
+        actions=tk.Frame(f,bg=WOOD);actions.grid(row=16,column=0,columnspan=3,sticky='ew')
         self.export_button=self.button(actions,'Export images' if len(rows)>1 else 'Export image',self.export);self.export_button.pack(side='right')
         self.close_button=self.button(actions,'Close',self.close_window);self.close_button.pack(side='right',padx=10)
         self.button(actions,'Reset to defaults',self.reset).pack(side='left')
@@ -119,19 +122,21 @@ class ExportWindow(tk.Toplevel):
 
     def options(self):
         try:
-            return ExportOptions(self.format.get(),95 if self.format.get()=='PNG' else int(self.quality.get()),not self.original,int(self.width.get()),int(self.height.get()),self.lock.get(),self.axis,self.fit.get(),self.subfolder.get()).validated()
+            return ExportOptions(self.format.get(),95 if self.format.get()=='PNG' else int(self.quality.get()),not self.original,int(self.width.get()),int(self.height.get()),self.lock.get(),self.axis,self.fit.get(),self.subfolder.get(),self.only_shrink.get()).validated()
         except ValueError as error:
             if 'invalid literal' in str(error):raise ValueError('Enter whole numbers for dimensions and quality.') from error
             raise
 
     def refresh_summary(self):
         self.quality_box.configure(state='disabled' if self.format.get()=='PNG' else 'normal')
+        self.shrink_box.configure(state='normal' if self.lock.get() else 'disabled')
         self.fit_box.configure(state='disabled' if self.lock.get() else 'readonly')
         try:
             option=self.options();size=option.dimensions(self.reference)
             if self.original:message='Original size: every image keeps its full exported dimensions.'
             elif self.lock.get():message=f'{size[0]} x {size[1]} px for the active image. Each selected image keeps its own aspect ratio using this {self.axis}.'
             else:message=f'All images: {size[0]} x {size[1]} px. '+{'Fit inside':'Adds transparent padding to fit; JPEG padding is white.','Fill / crop':'Crops around the center to fill the chosen dimensions.','Stretch':'Stretches the image to the exact dimensions.'}[self.fit.get()]
+            if not self.original and self.lock.get() and self.only_shrink.get():message+=' Smaller images stay at their original size.'
             self.summary.set(message)
         except ValueError as error:self.summary.set(str(error))
 
@@ -153,6 +158,7 @@ class ExportWindow(tk.Toplevel):
         if folder:self.folder.set(folder)
 
     def reset(self):
+        self.only_shrink.set(True)
         self.format.set('PNG');self.quality.set('95');self.fit.set('Fit inside');self.folder.set(self.app.output);self.subfolder.set('')
         self.original_size();self.show_destination()
 

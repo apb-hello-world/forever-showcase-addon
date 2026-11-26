@@ -1,0 +1,5 @@
+Forever Showcase Companion 0.8.2
+
+- Added Only shrink larger images to the export window, enabled by default with Maintain aspect ratio.
+- Export mixed-size batches at 850 pixels wide without enlarging smaller images.
+- Uncheck the option when you want smaller images enlarged to the selected size.

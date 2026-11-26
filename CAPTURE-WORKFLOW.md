@@ -136,3 +136,5 @@ files are never deleted. A project disappears when it has no remaining records.
 In the in-game **All captures** view, use the **All addons** dropdown to show only
 the selected addon, or choose All addons to restore the full list. Captures remain
 newest first. Scroll inside the dropdown for additional addons.
+
+With Maintain aspect ratio enabled, **Only shrink larger images** defaults on. The 850 px preset reduces wider images and preserves smaller images at their original dimensions. Uncheck it to enlarge images. Exact-size unlocked modes retain their chosen canvas dimensions. Reset to defaults re-enables this option.

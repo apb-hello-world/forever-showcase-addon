@@ -15,6 +15,18 @@ class ExportSizing(unittest.TestCase):
         self.assertEqual(height.dimensions((2000,1000)),(1000,500))
         self.assertEqual(ExportOptions().dimensions((1655,1117)),(1655,1117))
 
+    def test_only_shrink_and_optional_enlargement(self):
+        options=ExportOptions(resize=True,width=850)
+        for source,expected in [((425,300),(425,300)),((850,600),(850,600)),((1700,1200),(850,600))]:
+            image=Image.new('RGBA',source,(25,50,75,128))
+            result=resize_export(image,options)
+            self.assertEqual(result.size,expected)
+            self.assertEqual(result.getpixel((0,0))[3],128)
+            if source==expected:self.assertEqual(result.tobytes(),image.tobytes())
+        self.assertEqual(ExportOptions(resize=True,width=850,only_shrink=False).dimensions((425,300)),(850,600))
+        self.assertEqual(ExportOptions(resize=True,height=850,axis='height').dimensions((300,425)),(300,425))
+        self.assertEqual(ExportOptions(resize=True,width=850,maintain_ratio=False).dimensions((425,300)),(850,850))
+
     def test_unlocked_fit_crop_stretch(self):
         image=Image.new('RGBA',(200,100),'red')
         for mode in ('Fit inside','Fill / crop','Stretch'):
@@ -24,7 +36,7 @@ class ExportSizing(unittest.TestCase):
         self.assertEqual(image.size,(200,100))
 
     def test_size_limits_and_invalid_values(self):
-        for options in (ExportOptions(resize=True,width=0),ExportOptions(format='bad'),ExportOptions(quality=101),ExportOptions(resize=True,width=32768)):
+        for options in (ExportOptions(resize=True,width=0),ExportOptions(format='bad'),ExportOptions(quality=101),ExportOptions(resize=True,width=32768,only_shrink=False)):
             with self.assertRaises(ValueError):options.dimensions((200,100))
 
     def test_formats_repeat_exports_and_original_safety(self):

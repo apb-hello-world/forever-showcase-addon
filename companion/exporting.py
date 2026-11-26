@@ -25,6 +25,7 @@ class ExportOptions:
     axis: str = 'width'
     fit: str = 'Fit inside'
     subfolder: str = ''
+    only_shrink: bool = True
 
     def validated(self):
         validate_subfolder(self.subfolder)
@@ -45,6 +46,9 @@ class ExportOptions:
         if not self.resize:return source
         w,h=self.width,self.height
         if self.maintain_ratio:
+            if self.only_shrink:
+                if self.axis=='width':w=min(w,source[0])
+                else:h=min(h,source[1])
             if self.axis=='width':h=max(1,round(w*source[1]/source[0]))
             else:w=max(1,round(h*source[0]/source[1]))
         if w>32768 or h>32768 or w*h>50_000_000:raise ValueError('Export dimensions exceed the 50 megapixel limit.')
