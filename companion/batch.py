@@ -3,9 +3,9 @@ import re
 import unicodedata
 from pathlib import Path
 from .model import Style, open_image, crop_image, render, save_image
-from .exporting import ExportOptions, resize_export
+from .exporting import ExportOptions, resize_export, validate_subfolder
 
-def addon_directory(output, record):
+def addon_directory(output, record, subfolder=""):
     root=Path(output).expanduser().resolve()
     name=str(record.get('addonTitle') or record.get('addon') or 'Unknown addon')
     name=re.sub(r'\|c[0-9a-fA-F]{8}|\|r','',name)
@@ -14,6 +14,11 @@ def addon_directory(output, record):
     if name.split('.')[0].upper() in {'CON','PRN','AUX','NUL',*(f'COM{i}' for i in range(1,10)),*(f'LPT{i}' for i in range(1,10))}:name='_'+name
     destination=(root/name).resolve()
     if destination.parent!=root:raise ValueError('The addon folder must stay inside the selected save location.')
+    name=validate_subfolder(subfolder)
+    if name:
+        child=(destination/name).resolve()
+        if child.parent!=destination:raise ValueError('The subfolder must stay inside the addon folder.')
+        destination=child
     return destination
 
 
@@ -29,7 +34,7 @@ def export_batch(records, output, mode, screenshot_folder, originals, options=No
         name=row.get('name',row['scene'])
         try:
             if not row.get('source'):raise ValueError('Choose an original image first.')
-            destination=addon_directory(output,row)
+            destination=addon_directory(output,row,options.subfolder)
             if destination==Path(screenshot_folder).resolve():raise ValueError('Choose a save location outside the WoW Screenshots folder.')
             destination.mkdir(parents=True,exist_ok=True)
             image=open_image(row['source'])

@@ -43,3 +43,17 @@ class ExportSizing(unittest.TestCase):
             again,errors=export_batch([row],root/'out','Original',root/'screenshots',[source],ExportOptions())
             with Image.open(again[0]) as image:self.assertEqual(image.size,(80,40))
             self.assertEqual(source.read_bytes(),before)
+
+    def test_optional_subfolders_and_mixed_addons(self):
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);source=root/'source.png'
+            Image.new('RGBA',(80,40),'red').save(source)
+            rows=[dict(id=name,addon=name,scene='Overview',source=str(source)) for name in ('Spellwright','Wayside')]
+            for subfolder in ('','large','thumbnails'):
+                saved,errors=export_batch(rows,root/'out','Original',root/'screenshots',[source],ExportOptions(subfolder=subfolder))
+                self.assertEqual(errors,[])
+                for path,row in zip(saved,rows):
+                    self.assertEqual(Path(path).parent,(root/'out'/row['addon']/subfolder).resolve())
+            for invalid in ('..','../escape','a/b',r'a\b','D:\\escape','CON','NUL.png','bad.','bad?'):
+                with self.subTest(invalid=invalid),self.assertRaises(ValueError):
+                    export_batch(rows,root/'out','Original',root/'screenshots',[source],ExportOptions(subfolder=invalid))

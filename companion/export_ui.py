@@ -19,6 +19,7 @@ class ExportWindow(tk.Toplevel):
         self.width=tk.StringVar(value=str(reference[0]));self.height=tk.StringVar(value=str(reference[1]))
         self.lock=tk.BooleanVar(value=True);self.fit=tk.StringVar(value='Fit inside')
         self.folder=tk.StringVar(value=app.output)
+        self.subfolder=tk.StringVar(value="")
         self.summary=tk.StringVar();self.status=tk.StringVar(value='Ready. Existing exports will not be overwritten.')
         self.form=tk.Frame(self,bg=WOOD,padx=24,pady=20);self.form.pack(fill='both',expand=True)
         f=self.form;f.columnconfigure(1,weight=1)
@@ -46,8 +47,10 @@ class ExportWindow(tk.Toplevel):
         destination.columnconfigure(0,weight=1)
         tk.Entry(destination,textvariable=self.folder,bg=PAPER,fg=INK,relief='flat',highlightthickness=1,highlightbackground='#a18456',width=52).grid(row=0,column=0,sticky='ew',ipady=5)
         self.button(destination,'Browse...',self.browse).grid(row=0,column=1,padx=(10,0))
-        tk.Label(f,textvariable=self.status,bg=WOOD,fg=IVORY,justify='left',anchor='nw',height=4,wraplength=540,font=('Segoe UI',10)).grid(row=13,column=0,columnspan=3,sticky='w',pady=(8,8))
-        actions=tk.Frame(f,bg=WOOD);actions.grid(row=14,column=0,columnspan=3,sticky='ew')
+        self.label('Subfolder (optional)',13,0)
+        self.entry(self.subfolder,13,1,26)
+        tk.Label(f,textvariable=self.status,bg=WOOD,fg=IVORY,justify='left',anchor='nw',height=4,wraplength=540,font=('Segoe UI',10)).grid(row=14,column=0,columnspan=3,sticky='w',pady=(8,8))
+        actions=tk.Frame(f,bg=WOOD);actions.grid(row=15,column=0,columnspan=3,sticky='ew')
         self.export_button=self.button(actions,'Export images' if len(rows)>1 else 'Export image',self.export);self.export_button.pack(side='right')
         self.close_button=self.button(actions,'Close',self.close_window);self.close_button.pack(side='right',padx=10)
         self.button(actions,'Reset to defaults',self.reset).pack(side='left')
@@ -55,6 +58,7 @@ class ExportWindow(tk.Toplevel):
         self.height.trace_add('write',lambda *args:self.dimension_changed('height'))
         self.protocol('WM_DELETE_WINDOW',self.close_window);self.bind('<Escape>',lambda e:self.close_window())
         self.folder.trace_add('write',lambda *args:self.show_destination())
+        self.subfolder.trace_add('write',lambda *args:self.show_destination())
         self.show_destination()
         self.refresh_summary();self.update_idletasks()
         width=max(640,self.winfo_reqwidth());height=self.winfo_reqheight()+10
@@ -115,7 +119,7 @@ class ExportWindow(tk.Toplevel):
 
     def options(self):
         try:
-            return ExportOptions(self.format.get(),95 if self.format.get()=='PNG' else int(self.quality.get()),not self.original,int(self.width.get()),int(self.height.get()),self.lock.get(),self.axis,self.fit.get()).validated()
+            return ExportOptions(self.format.get(),95 if self.format.get()=='PNG' else int(self.quality.get()),not self.original,int(self.width.get()),int(self.height.get()),self.lock.get(),self.axis,self.fit.get(),self.subfolder.get()).validated()
         except ValueError as error:
             if 'invalid literal' in str(error):raise ValueError('Enter whole numbers for dimensions and quality.') from error
             raise
@@ -136,11 +140,11 @@ class ExportWindow(tk.Toplevel):
         try:
             if not self.folder.get().strip():
                 self.status.set('Choose a base export folder.');return
-            folders=list(dict.fromkeys(str(addon_directory(self.folder.get(),row)) for row in self.rows))
+            folders=list(dict.fromkeys(str(addon_directory(self.folder.get(),row,self.subfolder.get())) for row in self.rows))
             if len(folders)==1:
                 self.status.set('Images will be saved in:\n'+folders[0])
             else:
-                names=', '.join(Path(folder).name for folder in folders)
+                names=', '.join(str(Path(folder).relative_to(Path(self.folder.get()).expanduser().resolve())) for folder in folders)
                 self.status.set('Images will be saved in addon subfolders:\n'+names)
         except (ValueError,OSError) as error:self.status.set(str(error))
 
@@ -149,7 +153,7 @@ class ExportWindow(tk.Toplevel):
         if folder:self.folder.set(folder)
 
     def reset(self):
-        self.format.set('PNG');self.quality.set('95');self.fit.set('Fit inside');self.folder.set(self.app.output)
+        self.format.set('PNG');self.quality.set('95');self.fit.set('Fit inside');self.folder.set(self.app.output);self.subfolder.set('')
         self.original_size();self.show_destination()
 
     def export(self):

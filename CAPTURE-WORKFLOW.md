@@ -60,7 +60,10 @@ choose Fit inside (padding), Fill / crop, or Stretch for an exact output size.
 **Original size** keeps each image's full dimensions.
 
 Choose the base destination with **Save to folder > Browse**. Export creates
-unique files under addon-name folders and stays open: change options and export
+unique files under addon-name folders. The optional **Subfolder** field adds a
+folder beneath each addon, such as `<base>/Spellwright/thumbnails/`. Leave it
+blank to export directly into the addon folder. Reset clears the subfolder.
+The window stays open: change options and export
 again, or **Reset to defaults** for full-size PNG in the default save location.
 Exports cannot replace known originals or be saved in the WoW screenshot directory.
 PNG and WebP preserve transparency; JPEG uses white behind transparent pixels.

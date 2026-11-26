@@ -1,6 +1,18 @@
 """Final-image export sizing, independent of capture and styling settings."""
 from dataclasses import dataclass
+import re
 from PIL import Image,ImageOps
+
+def validate_subfolder(value):
+    name=value.strip()
+    if not name:return ''
+    reserved={'CON','PRN','AUX','NUL',*(f'COM{i}' for i in range(1,10)),*(f'LPT{i}' for i in range(1,10))}
+    if (name in ('.','..') or len(name)>100 or name.endswith('.')
+            or re.search(r'[<>:"/\\|?*\x00-\x1f]',name)
+            or name.split('.')[0].upper() in reserved):
+        raise ValueError('Enter a single folder name, such as large or thumbnails, without path separators or reserved characters.')
+    return name
+
 
 @dataclass(frozen=True)
 class ExportOptions:
@@ -12,8 +24,10 @@ class ExportOptions:
     maintain_ratio: bool = True
     axis: str = 'width'
     fit: str = 'Fit inside'
+    subfolder: str = ''
 
     def validated(self):
+        validate_subfolder(self.subfolder)
         if self.format not in ('PNG','JPEG','WebP'):raise ValueError('Choose PNG, JPEG or WebP.')
         if type(self.quality) is not int or not 1<=self.quality<=100:raise ValueError('Quality must be between 1 and 100.')
         if self.axis not in ('width','height'):raise ValueError('Invalid sizing axis.')
