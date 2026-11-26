@@ -1,7 +1,8 @@
 """Reusable export dialog: options stay open for successive output variants."""
 import tkinter as tk
 from tkinter import ttk,filedialog,messagebox
-from .batch import export_batch
+from pathlib import Path
+from .batch import export_batch, addon_directory
 from .exporting import ExportOptions
 
 WOOD,IVORY,INK,PAPER='#28190f','#f9ebcc','#362313','#f7e8ca'
@@ -40,7 +41,7 @@ class ExportWindow(tk.Toplevel):
         self.fit_box=self.combo(self.fit,['Fit inside','Fill / crop','Stretch'],9,1)
         self.fit_box.bind('<<ComboboxSelected>>',lambda e:self.refresh_summary())
         tk.Label(f,textvariable=self.summary,bg=WOOD,fg=IVORY,justify='left',anchor='nw',height=3,wraplength=540,font=('Segoe UI',10)).grid(row=10,column=0,columnspan=3,sticky='w',pady=(6,10))
-        self.label('Save to folder',11,0,3)
+        self.label('Base export folder',11,0,3)
         destination=tk.Frame(f,bg=WOOD);destination.grid(row=12,column=0,columnspan=3,sticky='ew',pady=(4,8))
         destination.columnconfigure(0,weight=1)
         tk.Entry(destination,textvariable=self.folder,bg=PAPER,fg=INK,relief='flat',highlightthickness=1,highlightbackground='#a18456',width=52).grid(row=0,column=0,sticky='ew',ipady=5)
@@ -53,6 +54,8 @@ class ExportWindow(tk.Toplevel):
         self.width.trace_add('write',lambda *args:self.dimension_changed('width'))
         self.height.trace_add('write',lambda *args:self.dimension_changed('height'))
         self.protocol('WM_DELETE_WINDOW',self.close_window);self.bind('<Escape>',lambda e:self.close_window())
+        self.folder.trace_add('write',lambda *args:self.show_destination())
+        self.show_destination()
         self.refresh_summary();self.update_idletasks()
         width=max(640,self.winfo_reqwidth());height=self.winfo_reqheight()+10
         x=min(max(0,app.root.winfo_x()+80),max(0,self.winfo_screenwidth()-width-20))
@@ -128,13 +131,26 @@ class ExportWindow(tk.Toplevel):
             self.summary.set(message)
         except ValueError as error:self.summary.set(str(error))
 
+    def show_destination(self):
+        if self.busy:return
+        try:
+            if not self.folder.get().strip():
+                self.status.set('Choose a base export folder.');return
+            folders=list(dict.fromkeys(str(addon_directory(self.folder.get(),row)) for row in self.rows))
+            if len(folders)==1:
+                self.status.set('Images will be saved in:\n'+folders[0])
+            else:
+                names=', '.join(Path(folder).name for folder in folders)
+                self.status.set('Images will be saved in addon subfolders:\n'+names)
+        except (ValueError,OSError) as error:self.status.set(str(error))
+
     def browse(self):
         folder=filedialog.askdirectory(parent=self,initialdir=self.folder.get(),title='Choose export base folder')
         if folder:self.folder.set(folder)
 
     def reset(self):
         self.format.set('PNG');self.quality.set('95');self.fit.set('Fit inside');self.folder.set(self.app.output)
-        self.original_size();self.status.set('Defaults restored: full-size PNG in your default save location.')
+        self.original_size();self.show_destination()
 
     def export(self):
         if self.busy or self.app.batch_running:return
@@ -152,7 +168,9 @@ class ExportWindow(tk.Toplevel):
             self.busy=False;self.app.batch_running=False;self.export_button.configure(state='normal');self.app.set_enabled(bool(self.app.images))
             try:
                 saved,errors=future.result()
-                message=f'Exported {len(saved)} of {len(self.rows)} images to {folder}.'
+                destinations=list(dict.fromkeys(str(Path(path).parent) for path in saved))
+                location=destinations[0] if len(destinations)==1 else 'addon subfolders in '+folder
+                message=f'Exported {len(saved)} of {len(self.rows)} images to {location}.'
                 if errors:message+=' '+str(len(errors))+' images could not be exported.'
                 else:message+=' Change settings to export another version, or reset for full size.'
                 self.status.set(message);self.app.say(f'Exported {len(saved)} images.'+(f' {len(errors)} failed.' if errors else ''))

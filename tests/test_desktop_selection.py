@@ -62,6 +62,7 @@ class DesktopSelection(unittest.TestCase):
         self.app.images=(image,image,image);self.app.view.set('Original');self.app.output=str(Path(self.temp.name)/'exports')
         self.app.refresh_list();self.app.set_enabled(True);self.app.open_export();self.root.update()
         dialog=self.app.export_window
+        self.assertIn(str((Path(self.app.output)/"Test").resolve()),dialog.status.get())
         def finish():
             deadline=time.monotonic()+10
             while dialog.busy and time.monotonic()<deadline:self.root.update();time.sleep(.01)
