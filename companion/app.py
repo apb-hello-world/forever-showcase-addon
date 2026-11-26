@@ -10,6 +10,7 @@ import re
 import sys
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, colorchooser, simpledialog
+from tkinter import font as tkfont
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict
 from pathlib import Path
@@ -28,6 +29,18 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / 'design' / 'assets'
 INK, IVORY, PAPER, WOOD = '#362313', '#f9ebcc', '#ebd8af', '#28190f'
 GAME = Path('E:/World of Warcraft/_forever_')
+
+
+def fit_label(text, width, measure):
+    """Fit visible text to the actual row width while preserving the source name."""
+    if measure(text)<=width:return text
+    if measure('…')>width:return ''
+    low,high=0,len(text)
+    while low<high:
+        middle=(low+high+1)//2
+        if measure(text[:middle]+'…')<=width:low=middle
+        else:high=middle-1
+    return text[:low].rstrip()+'…'
 
 
 def shell_image(source, size):
@@ -249,8 +262,9 @@ class App:
         style.map('Showcase.TCombobox',fieldbackground=[('readonly','#f7e8ca')],foreground=[('readonly',INK)])
         self.listbox = tk.Listbox(self.canvas, bg=WOOD, fg=IVORY, selectbackground='#6b3930',
                                  selectforeground='white', borderwidth=0, highlightthickness=0,
-                                 activestyle='dotbox', exportselection=False, selectmode='extended',cursor='hand2',relief='flat',selectborderwidth=4)
+                                 activestyle='none', exportselection=False, selectmode='extended',cursor='hand2',relief='flat',selectborderwidth=0)
         self.widget(self.listbox, 55, 206, 172, 260)
+        self.listbox.bind('<Configure>', self.resize_capture_list)
         self.listbox.bind('<Button-1>', self.click_capture)
         self.listbox.bind('<Control-a>', self.select_all)
         self.listbox.bind('<<ListboxSelect>>', self.select)
@@ -373,8 +387,13 @@ class App:
         self.visible_records = list(reversed(self.records))
         self.selected_ids.intersection_update(r['id'] for r in self.records)
         if not self.selected_ids and self.selected:self.selected_ids.add(self.selected)
+        font=tkfont.Font(font=self.listbox.cget('font'))
+        width=self.listbox.winfo_width()
+        if width<=1:width=round(172*self.scale)
+        available=max(1,width-font.measure('  ')-round(12*self.scale))
         for i,r in enumerate(self.visible_records):
-            self.listbox.insert('end','  '+r.get('name',r['scene'])[:40])
+            name=r.get('name',r['scene']).replace('\n',' ')
+            self.listbox.insert('end','  '+fit_label(name,available,font.measure))
             self.listbox.itemconfigure(i,background='#38271b' if i%2==0 else '#302116',foreground=IVORY)
             if r['id'] in self.selected_ids:self.listbox.selection_set(i)
             if r['id']==self.selected:self.listbox.activate(i)
@@ -383,6 +402,15 @@ class App:
         self.canvas.itemconfigure(self.count_text,text=f'{len(self.records)} captures · {count} selected\nCtrl-click to select more')
         self.save_button.configure(text=f'Save {count} images' if count>1 else 'Save')
         self.save_as_button.configure(text='Save to folder…' if count>1 else 'Save as…')
+
+    def resize_capture_list(self,event):
+        key=(event.width,self.listbox.cget('font'))
+        if key==getattr(self,'capture_list_size',None):return
+        self.capture_list_size=key
+        if hasattr(self,'visible_records'):
+            position=self.listbox.yview()[0]
+            self.refresh_list()
+            self.listbox.yview_moveto(position)
 
     def select_all(self,event=None):
         self.selected_ids={r['id'] for r in self.records}
