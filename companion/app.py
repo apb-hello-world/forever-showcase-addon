@@ -157,6 +157,8 @@ class App:
         except (OSError, ValueError):
             self.state = {}
         self.records = self.state.get('records', [])
+        self.project = self.state.get('project', '')
+        self.project_label = tk.StringVar(value='All projects')
         self.ignored = set(self.state.get('ignored', []))
         self.presets = {**PRESETS, **self.state.get('presets', {})}
         self.manifest = manifest or self.state.get('manifest', '')
@@ -213,7 +215,7 @@ class App:
 
     def persist(self):
         self.state.update(manifest=self.manifest, screenshots=self.screenshots, output=self.output,
-                          records=self.records, ignored=sorted(self.ignored),
+                          records=self.records, ignored=sorted(self.ignored), project=self.project,
                           presets={k: v for k, v in self.presets.items() if k not in PRESETS})
         temporary = self.state_file.with_suffix('.tmp')
         temporary.write_text(json.dumps(self.state, indent=2), encoding='utf-8')
@@ -259,6 +261,10 @@ class App:
         style.theme_use('clam')
         style.configure('Showcase.TCombobox',fieldbackground='#f7e8ca',background='#e0cba4',foreground=INK,borderwidth=0,arrowsize=12)
         style.map('Showcase.TCombobox',fieldbackground=[('readonly','#f7e8ca')],foreground=[('readonly',INK)])
+        self.text('Project',70,73,180,10,IVORY)
+        self.project_combo=ttk.Combobox(self.canvas,textvariable=self.project_label,state='readonly',style='Showcase.TCombobox',cursor='hand2')
+        self.field(self.project_combo,70,92,180,28)
+        self.project_combo.bind('<<ComboboxSelected>>',self.change_project)
         self.listbox = tk.Listbox(self.canvas, bg=WOOD, fg=IVORY, selectbackground='#6b3930',
                                  selectforeground='white', borderwidth=0, highlightthickness=0,
                                  activestyle='none', exportselection=False, selectmode='extended',cursor='hand2',relief='flat',selectborderwidth=0)
@@ -274,7 +280,7 @@ class App:
         self.listbox.bind('<<ListboxSelect>>', self.select)
         self.count_text = self.text('', 57, 486, 170, 11, IVORY)
         self.button('Import image', 66, 530, 150, self.import_image)
-        self.button('Remove record', 66, 570, 150, self.remove, 28)
+        self.remove_button=self.button('Remove record', 66, 570, 150, self.remove, 28)
         self.text('Preset', 272, 218, 165, 12, INK, True)
         combo = ttk.Combobox(self.canvas, textvariable=self.preset, values=list(self.presets), state='readonly',style='Showcase.TCombobox')
         self.preset_combo = self.field(combo, 272, 241, 166, 30)
@@ -386,10 +392,31 @@ class App:
     def selected_records(self):
         return [r for r in self.records if r['id'] in self.selected_ids]
 
+    def refresh_projects(self):
+        titles={}
+        for row in self.records:
+            key=row.get('addon','Unknown addon')
+            titles[key]=row.get('addonTitle') or titles.get(key) or key
+        labels={key:(title if list(titles.values()).count(title)==1 and title!='All projects' else f'{title} ({key})') for key,title in titles.items()}
+        self.project_choices={'All projects':''}
+        self.project_choices.update({label:key for key,label in sorted(labels.items(),key=lambda pair:pair[1].casefold())})
+        if self.project not in titles:self.project=''
+        self.project_combo.configure(values=list(self.project_choices))
+        self.project_label.set(labels.get(self.project,'All projects'))
+
+    def change_project(self,event=None):
+        self.project=self.project_choices.get(self.project_label.get(),'')
+        self.selected=None;self.selected_ids.clear()
+        self.refresh_list();self.request_render(False);self.persist()
+        self.say(f'{self.project_label.get()}: {len(self.visible_records)} captures.')
+
     def refresh_list(self):
+        self.refresh_projects()
         self.listbox.delete(0, 'end')
-        self.visible_records = list(reversed(self.records))
-        self.selected_ids.intersection_update(r['id'] for r in self.records)
+        self.visible_records = [r for r in reversed(self.records) if not self.project or r.get('addon','Unknown addon')==self.project]
+        visible_ids={r['id'] for r in self.visible_records}
+        self.selected_ids.intersection_update(visible_ids)
+        if self.selected not in visible_ids:self.selected=None
         if not self.selected_ids and self.selected:self.selected_ids.add(self.selected)
         font=tkfont.Font(font=self.listbox.cget('font'))
         width=self.listbox.winfo_width()
@@ -403,9 +430,10 @@ class App:
             if r['id']==self.selected:self.listbox.activate(i)
         count=len(self.selected_ids)
         self.canvas.itemconfigure(self.selection_note,text=f'Applies to {count} selected' if count else 'Select a capture to edit')
-        self.canvas.itemconfigure(self.count_text,text=f'{len(self.records)} captures · {count} selected\nCtrl-click to select more')
+        self.canvas.itemconfigure(self.count_text,text=f'{len(self.visible_records)} captures · {count} selected\nCtrl-click to select more')
         self.export_button.configure(text=f'Export {count} images...' if count>1 else 'Export image...')
         self.copy_button.show(count==1)
+        self.remove_button.configure(text=f'Remove {count} records' if count>1 else 'Remove record',state='normal' if count else 'disabled')
 
     def resize_capture_list(self,event):
         key=(event.width,self.listbox.cget('font'))
@@ -417,7 +445,7 @@ class App:
             self.listbox.yview_moveto(position)
 
     def select_all(self,event=None):
-        self.selected_ids={r['id'] for r in self.records}
+        self.selected_ids={r['id'] for r in self.visible_records}
         if not self.selected and self.visible_records:self.selected=self.visible_records[0]['id']
         self.refresh_list();self.load_selected_style();self.request_render(False)
         return 'break'
@@ -472,6 +500,8 @@ class App:
         self.rendering = False; self.render_error = None
         r = self.current()
         if not r:
+            self.canvas.itemconfigure(self.title_text,text='Your screenshots, ready for the gallery')
+            self.canvas.itemconfigure(self.subtitle,text='Select a capture from this project to preview.')
             self.draw_preview(); return
         self.canvas.itemconfigure(self.title_text, text=r.get('name', r['scene'])[:60])
         self.canvas.itemconfigure(self.subtitle, text=r['addon'] + '  ·  ' + r.get('status', 'Ready'))
@@ -735,8 +765,8 @@ class App:
                         old.update(row); changed = True
                 if changed:
                     self.persist(); self.refresh_list()
-                    if not self.selected and self.records:
-                        self.selected = self.records[-1]['id']; self.refresh_list()
+                    if not self.selected and self.visible_records:
+                        self.selected = self.visible_records[0]['id']; self.refresh_list()
                     self.load_selected_style();self.request_render(False)
                 if changed:
                     self.say(f'Batch loaded: {len(rows)} captures. Select a capture to preview.')
@@ -783,21 +813,19 @@ class App:
             self.records.append(dict(id=identity, addon='Manual import', scene=Path(path).stem, source=path,
                                      x=0, y=0, width=image.width, height=image.height,
                                      screenWidth=image.width, screenHeight=image.height, manual=True, status='Full image'))
+            self.project='Manual import'
             self.selected = identity; self.selected_ids={identity}; self.persist(); self.refresh_list(); self.request_render()
         except Exception as error:
             self.error(error)
 
     def remove(self):
-        if self.selected:
-            self.ignored.add(self.selected)
-            self.records = [r for r in self.records if r['id'] != self.selected]
-            self.selected_ids.discard(self.selected)
-            self.selected = None; self.images = None; self.render_generation += 1
-            self.rendering = False; self.render_error = None
-            self.persist(); self.refresh_list(); self.set_enabled(False); self.draw_preview()
-            self.canvas.itemconfigure(self.title_text,text='Your screenshots, ready for the gallery')
-            self.canvas.itemconfigure(self.subtitle,text='The same framing across every scene.')
-            self.say('Record removed. The original screenshot is unchanged.')
+        ids={row['id'] for row in self.selected_records()}
+        if not ids:return
+        self.ignored.update(ids)
+        self.records=[row for row in self.records if row['id'] not in ids]
+        self.selected=None;self.selected_ids.clear()
+        self.refresh_list();self.request_render(False);self.persist()
+        self.say(f"Removed {len(ids)} record"+('s' if len(ids)!=1 else '')+'. Original screenshots and exports are unchanged.')
 
     def open_export(self):
         if self.batch_running:return

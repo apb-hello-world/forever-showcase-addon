@@ -97,10 +97,11 @@ imported capture on the desktop. See CAPTURE-WORKFLOW.md for folders, presets,
 export controls and the test checklist. 30 automated tests pass; real capture
 event timing and pixel mapping await the owner. No GitHub work or publishing.
 
-## Desktop companion 0.7.2
+## Desktop companion 0.8.0
 
 Download the Windows installer from this repository's companion releases. It installs for the current user, adds a Start menu shortcut and an uninstaller, and preserves settings and capture records in `%LOCALAPPDATA%/ForeverShowcase` across upgrades. The addon remains usable without it.
 
+- The Project dropdown groups captures by addon automatically. All projects shows the full library; Ctrl+A selects only captures in the current project. Remove applies to every selected record and preserves original screenshots and exports.
 - Click a capture to edit it. Ctrl-click adds/removes captures and previews the newly added capture. Shift-click selects a range; Ctrl+A in the list selects all.
 - The Finish controls apply edits to every selected capture. Each capture retains its own saved style. Selecting more captures alone does not overwrite their styles.
 - Settings > Default save location sets the base export path. Exports go into a subfolder for the captured addon (display name, or addon ID for older records).

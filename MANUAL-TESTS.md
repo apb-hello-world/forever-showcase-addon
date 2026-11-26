@@ -95,3 +95,16 @@ addon works when the companion is closed.
 - Export JPEG and WebP with different quality settings. PNG/WebP preserve transparency; JPEG uses white.
 - Browse to another base folder, export, then Reset to defaults: full-size PNG and the configured default location return without changing capture styles.
 - Update from 0.6.7 using Settings > Check for updates; confirm records, presets and the default save location survive.
+
+## Addon 0.5.3 framing and capture sorting
+
+- Start a real scene and use Auto-fit area at your normal resolution/UI scale. Check that the guide surrounds all registered scene windows, including separate popups.
+- Close the guide, adjust Fit padding with +/- and re-run Auto-fit. Check 0 and 16 pixels, and a window near the screen edge. Reload and confirm padding persists.
+- Capture and transfer a sample to the companion; check the actual crop matches the in-game guide.
+- Open All captures, toggle Sort: Addon and Sort: Newest, and verify addon labels, newest-first order within groups, pagination and removal.
+
+## Addon 0.5.4 addon filter
+
+- In All captures, choose an addon from the dropdown. Only that addon's captures should appear, newest first. Choose All addons to show everything again.
+- Check deletion and pagination stay inside the filtered view; opening This scene hides the addon dropdown. Close/Escape dismisses the menu. Scroll a long addon menu to reach later entries.
+- Owner confirmed Auto-fit works correctly after the 0.5.3 coordinate correction; this update preserves that calculation.

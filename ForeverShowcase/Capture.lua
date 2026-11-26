@@ -40,23 +40,41 @@ function C:SetRect(x,y,w,h)
     self:DB().crops[addon]={x=x,y=y,width=w,height=h,screenWidth=sw,screenHeight=sh}
     return true
 end
+function C:FitPadding()
+    local value=tonumber(self:DB().fitPadding) or 16
+    return math.max(0,math.min(256,math.floor(value+.5)))
+end
+function C:SetFitPadding(value)
+    if InCombatLockdown() or pending then return false end
+    value=tonumber(value)
+    if not value or value~=value then return false end
+    self:DB().fitPadding=math.max(0,math.min(256,math.floor(value+.5)))
+    return true
+end
 function C:Fit()
+    if InCombatLockdown() or pending then return end
     local context=API.Presentation:GetContext()
     local config=context and context._presentation
     if not config then API.Report('This adapter has not registered its scene windows. Use Draw area.'); return end
     local sw,sh=self:Screen()
+    -- Normalize UI coordinates through the same full-screen UIParent space
+    -- used by Draw area. Effective scale alone is not screenshot pixels.
+    local parentScale=UIParent:GetEffectiveScale()
+    local sx=sw/(UIParent:GetWidth()*parentScale)
+    local sy=sh/(UIParent:GetHeight()*parentScale)
     local x,y,right,bottom=sw,sh,0,0
     for _,f in ipairs(config.frames) do
         if f:IsShown() and f:GetLeft() and f:GetTop() then
             local s=f:GetEffectiveScale()
-            local l,t=f:GetLeft()*s,sh-f:GetTop()*s
+            local l,t=f:GetLeft()*s*sx,sh-f:GetTop()*s*sy
             x=math.min(x,l); y=math.min(y,t)
-            right=math.max(right,l+f:GetWidth()*s); bottom=math.max(bottom,t+f:GetHeight()*s)
+            right=math.max(right,l+f:GetWidth()*s*sx); bottom=math.max(bottom,t+f:GetHeight()*s*sy)
         end
     end
     if right<=x or bottom<=y then API.Report('No visible scene bounds. Use Draw area.'); return end
-    x=math.max(0,x-16); y=math.max(0,y-16)
-    if self:SetRect(x,y,math.min(sw,right+16)-x,math.min(sh,bottom+16)-y) then self:ShowArea(false) end
+    local padding=self:FitPadding()
+    x=math.max(0,math.floor(x-padding)); y=math.max(0,math.floor(y-padding))
+    if self:SetRect(x,y,math.min(sw,math.ceil(right+padding))-x,math.min(sh,math.ceil(bottom+padding))-y) then self:ShowArea(false) end
 end
 function C:IsBusy() return pending~=nil end
 function C:Name(record)

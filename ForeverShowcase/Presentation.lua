@@ -165,6 +165,13 @@ local function build()
             local b=ui.Button(toolbar,e[1],e[3],30); b:SetPoint('TOPLEFT',e[2],-72); b:SetScript('OnClick',e[4])
         end
     end
+    toolbar.padding=ui.Label(toolbar,'',12,646,80,138,22,true)
+    toolbar.paddingLess=ui.Button(toolbar,'-',32,30); toolbar.paddingLess:SetPoint('TOPLEFT',790,-72)
+    toolbar.paddingMore=ui.Button(toolbar,'+',32,30); toolbar.paddingMore:SetPoint('TOPLEFT',830,-72)
+    toolbar.paddingLess.tip='Reduce Auto-fit padding by 4 screenshot pixels. Then click Auto-fit area.'
+    toolbar.paddingMore.tip='Increase Auto-fit padding by 4 screenshot pixels. Then click Auto-fit area.'
+    toolbar.paddingLess:SetScript('OnClick',function() API.Capture:SetFitPadding(API.Capture:FitPadding()-4); P:Refresh() end)
+    toolbar.paddingMore:SetScript('OnClick',function() API.Capture:SetFitPadding(API.Capture:FitPadding()+4); P:Refresh() end)
     toolbar.note=ui.Label(toolbar,'',12,16,110,848,20,true)
     toolbar:SetScript('OnHide',function(self) self:StopMovingOrSizing(); if GameTooltip then GameTooltip:Hide() end end)
     toolbar:Hide(); fit()
@@ -182,6 +189,12 @@ function P:Refresh()
     toolbar.background:SetText('Backdrop: '..self.modes[backdrop:IsShown() and self.mode or 1])
     toolbar.note:SetText(current and not current._presentation and 'Backdrop unavailable: this adapter must register its scene windows.'
         or 'Drag the title to move. Hide for 10s removes controls, then brings them back automatically.')
+    if API.Capture then
+        local padding=API.Capture:FitPadding()
+        toolbar.padding:SetText('Fit padding: '..padding..' px')
+        enable(toolbar.paddingLess,ready and not API.Capture:IsBusy() and padding>0)
+        enable(toolbar.paddingMore,ready and not API.Capture:IsBusy() and padding<256)
+    end
     if API.Capture and ready then
         local r=API.Capture:Rect()
         toolbar.note:SetText(r and ('Capture area: '..r.width..' x '..r.height..' pixels. Capture hides controls; Captures sends the batch.')

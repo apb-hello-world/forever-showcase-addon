@@ -65,38 +65,84 @@ function C:ShowArea(draw)
     f.label:SetText(draw and 'Drag an area to crop. Right-click or Escape cancels.' or 'LIVE framing guide, not a saved image. Click or Escape to close.')
     f:Show()
 end
-local page,showAll=1,false
+local page,showAll,addonFilter=1,false,nil
 function C:RefreshGallery()
     local w=self.gallery; if not w then return end
     local addon,scene=API:Status()
+    local titles={}
+    for _,r in ipairs(self:DB().captures) do titles[r.addon]=r.addonTitle or titles[r.addon] or r.addon end
+    if addonFilter and not titles[addonFilter] then addonFilter=nil end
+    w.addonOptions={{title='All addons'}}
+    local options={}
+    for id,title in pairs(titles) do options[#options+1]={id=id,title=title} end
+    table.sort(options,function(a,b) if a.title==b.title then return a.id<b.id end return a.title<b.title end)
+    for _,option in ipairs(options) do w.addonOptions[#w.addonOptions+1]=option end
+    local all=showAll or not addon
     local records={}
-    for _,r in ipairs(self:DB().captures) do
-        if showAll or not addon or (r.addon==addon and r.scene==scene) then records[#records+1]=r end
+    for i=#self:DB().captures,1,-1 do
+        local r=self:DB().captures[i]
+        if (all and (not addonFilter or r.addon==addonFilter)) or (not all and r.addon==addon and r.scene==scene) then records[#records+1]=r end
     end
+    w.addons:SetText((titles[addonFilter] or 'All addons')..'  v')
+    w.addons.tip=titles[addonFilter] or 'Choose an addon to filter captures.'
+    if all then w.addons:Show(); w.scope:Hide() else w.addons:Hide(); w.scope:Show(); w.addonMenu:Hide() end
     page=math.max(1,math.min(page,math.ceil(#records/6)))
     w.title:SetText((showAll or not addon) and 'All captures' or 'Scene captures')
     w.scope:SetText(addon and not showAll and (addon..' / '..scene) or 'All scenes and addons')
     w.filter:SetText(showAll and 'This scene' or 'All captures')
     for i,b in ipairs(w.rows) do
-        local r=records[#records-(page-1)*6-i+1]
+        local r=records[(page-1)*6+i]
         if r then
-            b.label:SetText(self:Name(r)); b.info:SetText(r.width..' x '..r.height..'  -  '..(r.exported and 'Sent' or 'Pending send'))
+            b.label:SetText(self:Name(r)); b.info:SetText(((showAll or not addon) and ((r.addonTitle or r.addon)..'  -  ') or '')..r.width..' x '..r.height..'  -  '..(r.exported and 'Sent' or 'Pending send'))
             b.remove.id=r.id; b:Show()
             if self:IsBusy() then b.remove:Disable() else b.remove:Enable() end
         else b:Hide() end
     end
-    w.empty:SetText(#records==0 and 'No captures for this scene yet.' or '')
+    if w.addonMenu:IsShown() then self:RefreshAddonMenu() end
+    w.empty:SetText(#records==0 and 'No captures in this view yet.' or '')
     w.count:SetText(string.format('%d captures  |  Page %d / %d',#records,page,math.max(1,math.ceil(#records/6))))
     if page>1 then w.previous:Enable() else w.previous:Disable() end
     if page*6<#records then w.next:Enable() else w.next:Disable() end
     if #self:DB().captures>0 and not self:IsBusy() and not InCombatLockdown() then w.send:Enable() else w.send:Disable() end
 end
+function C:RefreshAddonMenu()
+    local w=self.gallery; if not w then return end
+    w.menuOffset=math.min(w.menuOffset or 0,math.max(0,#w.addonOptions-6))
+    for i,b in ipairs(w.addonMenu.rows) do
+        local option=w.addonOptions[(w.menuOffset or 0)+i]
+        if option then b.addonID=option.id; b:SetText(option.title); b.tip=option.title; b:SetSelected(addonFilter==option.id); b:Show() else b:Hide() end
+    end
+    if #w.addonOptions>6 then w.addonMenu.hint:Show() else w.addonMenu.hint:Hide() end
+    w.addonMenu:SetHeight(math.min(6,#w.addonOptions)*32+8+(#w.addonOptions>6 and 20 or 0))
+end
 function C:ShowGallery()
     if self:IsBusy() then return end
     if not self.gallery then
         local w=ui.CompactWindow('ForeverShowcaseCaptures','Scene captures',470,480); self.gallery=w
-        w.scope=ui.Label(w,'',13,18,62,280,25,true)
+        w.scope=ui.Label(w,'',13,18,62,300,25,true)
         w.filter=w:Button('All captures',326,58,126,function() showAll=not showAll; page=1; C:RefreshGallery() end)
+        w.addons=w:Button('All addons  v',18,58,300,function()
+            if w.addonMenu:IsShown() then w.addonMenu:Hide()
+            else w.menuOffset=0; C:RefreshAddonMenu(); w.addonMenu:Show() end
+        end)
+        local menu=CreateFrame('Frame','ForeverShowcaseCaptureAddonMenu',w); w.addonMenu=menu
+        menu:SetPoint('TOPLEFT',18,-90); menu:SetSize(300,216); menu:SetFrameLevel(w:GetFrameLevel()+20); menu:EnableMouse(true)
+        local fill=menu:CreateTexture(nil,'BACKGROUND'); fill:SetAllPoints(); fill:SetColorTexture(.12,.075,.045,1)
+        menu.rows={}
+        for i=1,6 do
+            local item=ui.Button(menu,'',292,30); item:SetPoint('TOPLEFT',4,-(4+(i-1)*32))
+            item:SetFrameLevel(menu:GetFrameLevel()+1)
+            item:SetScript('OnClick',function(self) addonFilter=self.addonID; page=1; menu:Hide(); C:RefreshGallery() end)
+            menu.rows[i]=item
+        end
+        menu.hint=ui.Label(menu,'Scroll for more addons',11,8,198,284,16,true)
+        menu:EnableMouseWheel(true)
+        menu:SetScript('OnMouseWheel',function(_,delta)
+            w.menuOffset=math.max(0,math.min(math.max(0,#w.addonOptions-6),(w.menuOffset or 0)-delta)); C:RefreshAddonMenu()
+        end)
+        table.insert(UISpecialFrames,'ForeverShowcaseCaptureAddonMenu')
+        w:SetScript('OnHide',function(self) self:StopMovingOrSizing(); menu:Hide() end)
+        menu:Hide()
         w.rows={}
         for i=1,6 do
             local row=CreateFrame('Frame',nil,w); row:SetSize(434,44); row:SetPoint('TOPLEFT',18,-(100+(i-1)*46))

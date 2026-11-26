@@ -1,6 +1,6 @@
 # Forever Showcase API v1
 
-Global: `ForeverShowcase`. Runtime version: `VERSION = "0.5.2"`.
+Global: `ForeverShowcase`. Runtime version: `VERSION = "0.5.4"`.
 Contract version: `API_VERSION = 1`. Lifecycle methods use Lua colon syntax;
 `ForeverShowcase.Report(message)` is a dot-call logging helper. API v1 is the
 integration target after the automated lifecycle tests; native validation remains

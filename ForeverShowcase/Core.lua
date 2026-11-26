@@ -1,5 +1,5 @@
 -- API v1. No SavedVariables, hooks, gameplay actions, or global API replacement.
-local API = { API_VERSION = 1, VERSION = "0.5.2", CAPABILITIES = { presentation = true } }
+local API = { API_VERSION = 1, VERSION = "0.5.4", CAPABILITIES = { presentation = true } }
 ForeverShowcase = API
 local registry, active, pending, busy, faulted = {}, nil, nil, false, false
 local function combat() return InCombatLockdown() end

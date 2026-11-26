@@ -8,7 +8,9 @@ No GitHub repository, release, installer, or publication is part of this build.
 
 1. Reload WoW to load 0.4.0, then open `/showcase` and start a Spellwright scene.
 2. Click **Draw area** and drag a rectangle, or **Auto-fit area** to surround the
-   adapter's registered windows with 16 pixels of space. Right-click/Escape cancels
+   adapter's registered windows. **Fit padding** on the toolbar adjusts the margin
+   in screenshot pixels (default 16, range 0–256, steps of 4); click Auto-fit area
+   again to apply it. Padding is remembered across reloads. Right-click/Escape cancels
    drawing. The area is remembered per addon and reused across its scenes.
 3. Click **Capture**. Showcase hides its controls and guide, waits at least two
    frames and 0.25 seconds, then requests a real full-screen screenshot. A flash
@@ -116,3 +118,19 @@ portable Windows folder. No adapter changes are needed for capture. API v1 and
 Set **Settings → Default save location** to the base folder for exports. Exports automatically use `<base>/<addon name>/`; mixed-addon selections split into separate addon folders. New captures from addon 0.5.2 include the display name. Existing captures fall back to their addon ID. Manual imports use `Manual import`.
 
 The export window can choose a different base folder for that session and still groups by addon. Existing images are not moved and saved files are not overwritten.
+
+## Projects and bulk record removal
+
+The Project dropdown beside the wordmark groups captures automatically by addon,
+using the readable addon title. All projects shows the complete library; manual
+imports have their own project. Changing projects clears the selection. Ctrl+A
+selects only the current project's visible captures. The last chosen project is
+remembered, and newly imported addons appear in the dropdown automatically.
+
+Remove applies to all selected records and displays the selection count. Removed
+records are ignored on later manifest scans. Original screenshots and exported
+files are never deleted. A project disappears when it has no remaining records.
+
+In the in-game **All captures** view, use the **All addons** dropdown to show only
+the selected addon, or choose All addons to restore the full list. Captures remain
+newest first. Scroll inside the dropdown for additional addons.

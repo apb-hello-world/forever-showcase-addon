@@ -78,3 +78,41 @@ class DesktopSelection(unittest.TestCase):
         self.assertEqual(dialog.subfolder.get(),'')
         self.assertLessEqual(dialog.export_button.winfo_rooty()+dialog.export_button.winfo_height(),dialog.winfo_rooty()+dialog.winfo_height())
         dialog.close_window()
+
+    def test_projects_scope_selection_and_bulk_removal(self):
+        import json
+        source=Path(self.temp.name)/'original.png';source.write_bytes(b'original unchanged')
+        exported=Path(self.temp.name)/'export.png';exported.write_bytes(b'export unchanged')
+        self.app.records=[dict(id=str(i),addon='spellwright' if i<2 else 'wayside',addonTitle='Spellwright' if i<2 else 'Wayside',scene='Scene '+str(i)) for i in range(4)]
+        self.app.refresh_list()
+        self.assertEqual(list(self.app.project_combo.cget('values')),['All projects','Spellwright','Wayside'])
+        self.app.project_label.set('Spellwright');self.app.change_project();self.root.update()
+        self.assertEqual(len(self.app.visible_records),2)
+        self.app.select_all();self.assertEqual(self.app.selected_ids,{'0','1'})
+        self.app.remove();self.root.update()
+        self.assertEqual({r['id'] for r in self.app.records},{'2','3'})
+        self.assertEqual(self.app.ignored,{'0','1'})
+        self.assertEqual(self.app.selected_ids,set());self.assertIsNone(self.app.images)
+        state=json.loads(self.app.state_file.read_text(encoding='utf-8'))
+        self.assertEqual(set(state['ignored']),{'0','1'})
+        self.assertEqual(source.read_bytes(),b'original unchanged')
+        self.assertEqual(exported.read_bytes(),b'export unchanged')
+        self.app.select_all();self.app.remove();self.root.update()
+        self.assertEqual(self.app.records,[])
+        self.assertEqual(list(self.app.project_combo.cget('values')),['All projects'])
+
+    def test_project_switch_clears_hidden_selection_and_persists(self):
+        import json
+        self.app.records=[dict(id='one',addon='one',addonTitle='Same name',scene='One'),dict(id='two',addon='two',addonTitle='Same name',scene='Two')]
+        self.app.refresh_list();self.app.select_all()
+        self.app.project_label.set('Same name (two)');self.app.change_project();self.root.update()
+        self.assertEqual(self.app.project,'two')
+        self.assertEqual(self.app.selected_ids,set());self.assertIsNone(self.app.selected)
+        self.assertEqual([r['id'] for r in self.app.visible_records],['two'])
+        self.assertEqual(json.loads(self.app.state_file.read_text(encoding='utf-8'))['project'],'two')
+        self.app.select_all();self.assertEqual(self.app.selected_ids,{'two'})
+        self.app.records.append(dict(id='three',addon='three',addonTitle='New addon',scene='Three'))
+        self.app.refresh_list()
+        self.assertIn('New addon',self.app.project_choices)
+        self.assertEqual(self.app.project,'two')
+        self.assertEqual(self.app.selected_ids,{'two'})
