@@ -3,6 +3,7 @@ import re
 import unicodedata
 from pathlib import Path
 from .model import Style, open_image, crop_image, render, save_image
+from .exporting import ExportOptions, resize_export
 
 def addon_directory(output, record):
     root=Path(output).expanduser().resolve()
@@ -16,7 +17,8 @@ def addon_directory(output, record):
     return destination
 
 
-def export_batch(records, output, mode, screenshot_folder, originals):
+def export_batch(records, output, mode, screenshot_folder, originals, options=None):
+    options=(options or ExportOptions()).validated()
     output=Path(output).expanduser().resolve()
     if output==Path(screenshot_folder).resolve():
         raise ValueError('Choose an export folder outside the WoW Screenshots folder.')
@@ -33,18 +35,21 @@ def export_batch(records, output, mode, screenshot_folder, originals):
             image=open_image(row['source'])
             if mode!='Original':image=crop_image(image,row)
             if mode=='Styled':image=render(image,Style(**row['style']).validated())
+            image=resize_export(image,options)
             stem=re.sub(r'[^A-Za-z0-9_.-]+','-',row['addon']+'-'+name).strip('.-')[:120] or 'showcase'
-            target=destination/(stem+'.png');number=2
+            if options.resize:stem+=f'-{image.width}x{image.height}'
+            extension=options.extension
+            target=destination/(stem+extension);number=2
             while target.exists() or target.resolve() in originals:
-                target=destination/f'{stem}-{number}.png';number+=1
+                target=destination/f'{stem}-{number}{extension}';number+=1
             # Exclusive reservation prevents racing another export's filename.
             while True:
                 try:
                     with target.open('xb'):pass
                     break
                 except FileExistsError:
-                    target=destination/f'{stem}-{number}.png';number+=1
-            try:save_image(image,target,row['source'])
+                    target=destination/f'{stem}-{number}{extension}';number+=1
+            try:save_image(image,target,row['source'],quality=options.quality)
             except Exception:
                 target.unlink(missing_ok=True);raise
             saved.append(str(target))

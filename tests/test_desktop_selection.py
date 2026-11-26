@@ -17,6 +17,8 @@ class DesktopSelection(unittest.TestCase):
         self.app.refresh_list();self.root.update()
 
     def tearDown(self):
+        for timer in self.root.tk.call("after", "info"):
+            self.root.after_cancel(timer)
         self.app.close();self.temp.cleanup()
 
     def pointer_click(self,index,modifiers=0):
@@ -48,3 +50,26 @@ class DesktopSelection(unittest.TestCase):
         self.assertEqual(len(self.pointer_click(3,1)),4)
         self.app.refresh_list();self.root.update()
         self.assertEqual(len(self.app.listbox.curselection()),4)
+
+
+    def test_export_dialog_repeat_export_and_reset(self):
+        import time
+        from PIL import Image
+        source=Path(self.temp.name)/'source.png'
+        image=Image.new('RGBA',(200,100),'red');image.save(source)
+        row=dict(id='export',addon='Test',scene='Overview',source=str(source),screenWidth=200,screenHeight=100,width=200,height=100,x=0,y=0)
+        self.app.records=[row];self.app.selected='export';self.app.selected_ids={'export'}
+        self.app.images=(image,image,image);self.app.view.set('Original');self.app.output=str(Path(self.temp.name)/'exports')
+        self.app.refresh_list();self.app.set_enabled(True);self.app.open_export();self.root.update()
+        dialog=self.app.export_window
+        def finish():
+            deadline=time.monotonic()+10
+            while dialog.busy and time.monotonic()<deadline:self.root.update();time.sleep(.01)
+            self.assertFalse(dialog.busy)
+        dialog.export();finish();self.assertTrue(dialog.winfo_exists())
+        dialog.width_850();self.assertEqual(dialog.height.get(),'425')
+        dialog.export();finish()
+        files=list((Path(self.app.output)/'Test').glob('*.png'));self.assertEqual(len(files),2)
+        with Image.open(next(p for p in files if '850x425' in p.name)) as resized:self.assertEqual(resized.size,(850,425))
+        dialog.reset();self.assertTrue(dialog.original);self.assertEqual(dialog.width.get(),'200')
+        dialog.close_window()

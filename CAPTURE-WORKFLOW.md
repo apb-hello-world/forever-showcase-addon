@@ -52,12 +52,20 @@ require **Choose original**. It never selects the newest file as a fallback.
 These are conservative matching heuristics, not an exact filename supplied by WoW.
 Verify the first real capture and any uncertain match before exporting.
 
-Choose **Original**, **Crop**, or **Styled** above the preview. Save, Save as, and
-Copy use that selected mode at full resolution. **Save** creates a uniquely named
-PNG in the default directory. **Save as** supports PNG and JPEG. Exports cannot
-replace known originals or be saved in the WoW screenshot directory. Rounded
-corners and transparency are preserved in PNG; JPEG and clipboard images flatten
-transparent pixels onto white. The clipboard uses the Windows DIB image format.
+Choose **Original**, **Crop**, or **Styled** above the preview, then **Export**.
+The separate export window supports PNG, JPEG and WebP, adjustable quality,
+width and height, and a Maintain aspect ratio checkbox. **850 px wide** calculates
+the matching height separately for each selected image. With the ratio unlocked,
+choose Fit inside (padding), Fill / crop, or Stretch for an exact output size.
+**Original size** keeps each image's full dimensions.
+
+Choose the base destination with **Save to folder > Browse**. Export creates
+unique files under addon-name folders and stays open: change options and export
+again, or **Reset to defaults** for full-size PNG in the default save location.
+Exports cannot replace known originals or be saved in the WoW screenshot directory.
+PNG and WebP preserve transparency; JPEG uses white behind transparent pixels.
+**Copy Image** appears only for one selected capture and copies the current mode
+at full resolution, flattening transparency onto white using Windows DIB.
 
 Built-in presets: Stagekeeper, Clean, Gallery ivory, Transparent. Customize
 padding, radius, border, shadow, background and border color; Save preset keeps a
@@ -81,7 +89,7 @@ The packaged desktop application is checked locally. New native controls and the
 real WoW screenshot event/timing/coordinate mapping require the owner's game test.
 
 Test rounded PNG in an image editor, copy/paste into your usual publishing tool,
-Save and Save as, folder choices, a second batch, missing/duplicate screenshots,
+Export formats and sizes, folder choices, a second batch, missing/duplicate screenshots,
 changing UI scale, Stop, combat restoration, and addon operation with the app closed.
 
 ## Development
@@ -102,6 +110,6 @@ portable Windows folder. No adapter changes are needed for capture. API v1 and
 
 ## Default save location
 
-Set **Settings → Default save location** to the base folder for exports. Save and batch Save automatically use `<base>/<addon name>/`; mixed-addon selections split into separate addon folders. New captures from addon 0.5.2 include the display name. Existing captures fall back to their addon ID. Manual imports use `Manual import`.
+Set **Settings → Default save location** to the base folder for exports. Exports automatically use `<base>/<addon name>/`; mixed-addon selections split into separate addon folders. New captures from addon 0.5.2 include the display name. Existing captures fall back to their addon ID. Manual imports use `Manual import`.
 
-Single-image Save As keeps the exact filename you choose. Batch Save to folder chooses a base folder and still groups by addon. Existing images are not moved and saved files are not overwritten.
+The export window can choose a different base folder for that session and still groups by addon. Existing images are not moved and saved files are not overwritten.

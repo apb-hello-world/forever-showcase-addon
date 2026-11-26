@@ -20,10 +20,10 @@ from PIL import Image, ImageTk, ImageDraw, ImageFont
 from companion import updates
 from companion.version import VERSION
 from companion.preview import PreviewWindow
-from companion.batch import export_batch, addon_directory
+from companion.export_ui import ExportWindow
 
 from companion.model import (Style, PRESETS, read_manifest, match_batch, open_image,
-                             crop_image, render, save_image, copy_image)
+                             crop_image, render, copy_image)
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / 'design' / 'assets'
@@ -205,8 +205,7 @@ class App:
         self.button_art = Image.open(ASSETS / 'StagekeeperButton.png').convert('RGBA').resize((512,128), Image.Resampling.LANCZOS)
         self.build()
         root.bind('<Configure>', self.resize)
-        root.bind('<Control-s>', lambda _: self.save())
-        root.bind('<Control-Shift-S>', lambda _: self.save(True))
+        root.bind('<Control-s>', lambda _: self.open_export())
         root.bind('<Control-c>', lambda _: self.copy() if not isinstance(root.focus_get(), (tk.Entry, tk.Spinbox, ttk.Entry, ttk.Combobox)) else None)
         root.after(80, self.layout)
         root.after(100, self.scan)
@@ -309,8 +308,7 @@ class App:
         self.preview_buttons = self.art_buttons[self.preview_button_start:]
         self.build_settings()
         self.status_text = self.text(self.status, 55, 657, 390, 12, IVORY)
-        self.save_button = self.button('Save', 505, 658, 122, self.save, 36)
-        self.save_as_button = self.button('Save as…', 635, 658, 140, lambda: self.save(True), 36)
+        self.export_button = self.button('Export...', 625, 658, 150, self.open_export, 36)
         self.copy_button = self.button('Copy image', 783, 658, 145, self.copy, 36)
         self.set_enabled(False)
 
@@ -372,7 +370,8 @@ class App:
         for b in (self.copy_button,self.full_preview_button):
             b.configure(state='normal' if enabled else 'disabled')
         can_save=(enabled or len(self.selected_ids)>1) and not self.batch_running
-        for b in (self.save_button,self.save_as_button):b.configure(state='normal' if can_save else 'disabled')
+        self.export_button.configure(state='normal' if can_save else 'disabled')
+        self.copy_button.show(len(self.selected_ids)==1)
 
     def say(self, text):
         self.status = text; self.canvas.itemconfigure(self.status_text, text=text)
@@ -405,8 +404,8 @@ class App:
         count=len(self.selected_ids)
         self.canvas.itemconfigure(self.selection_note,text=f'Applies to {count} selected' if count else 'Select a capture to edit')
         self.canvas.itemconfigure(self.count_text,text=f'{len(self.records)} captures · {count} selected\nCtrl-click to select more')
-        self.save_button.configure(text=f'Save {count} images' if count>1 else 'Save')
-        self.save_as_button.configure(text='Save to folder…' if count>1 else 'Save as…')
+        self.export_button.configure(text=f'Export {count} images...' if count>1 else 'Export image...')
+        self.copy_button.show(count==1)
 
     def resize_capture_list(self,event):
         key=(event.width,self.listbox.cget('font'))
@@ -506,7 +505,7 @@ class App:
             try:
                 self.rendering = False
                 self.images = future.result(); self.set_enabled(True)
-                self.say('Ready to export. Save and Copy use the selected preview mode.')
+                self.say('Ready to export. Export and Copy use the selected preview mode.')
             except Exception as error:
                 self.render_error = str(error)
                 self.say(str(error)); self.images = None
@@ -800,60 +799,27 @@ class App:
             self.canvas.itemconfigure(self.subtitle,text='The same framing across every scene.')
             self.say('Record removed. The original screenshot is unchanged.')
 
-    def save(self, save_as=False):
+    def open_export(self):
         if self.batch_running:return
-        if len(self.selected_ids)>1:
-            self.save_batch(save_as);return
-        if not self.images or not self.current():
-            return
-        r = self.current()
-        stem = re.sub(r'[^A-Za-z0-9_.-]+', '-', r['addon']+'-'+r.get('name',r['scene'])).strip('.-')[:100] or 'showcase'
-        name = stem + '-' + datetime.now().strftime('%Y%m%d-%H%M%S') + '.png'
+        existing=getattr(self,'export_window',None)
+        if existing is not None and existing.winfo_exists():existing.lift();return
         try:
-            if save_as:
-                path = filedialog.asksaveasfilename(parent=self.root, initialdir=self.output, initialfile=name,
-                                                  defaultextension='.png', filetypes=[('PNG', '*.png'), ('JPEG (white transparency)', '*.jpg')])
-                if not path:return
+            default=asdict(self.style())
+            rows=[dict(r,style=dict(r.get('style',default))) for r in self.selected_records()]
+            if not rows:return
+            mode=self.view.get()
+            if self.images:reference=self.export_image().size
             else:
-                if Path(self.output).expanduser().resolve()==Path(self.screenshots).resolve():
-                    raise ValueError('Choose a default save location outside the WoW Screenshots folder.')
-                destination=addon_directory(self.output,r)
-                path=destination/name
-                index=2
-                while path.exists():
-                    path=destination/f'{Path(name).stem}-{index}.png';index+=1
-            if Path(path).resolve() in {Path(v['source']).resolve() for v in self.records if v.get('source')}:
-                raise ValueError('Choose a different destination; original screenshots are preserved.')
-            if Path(path).resolve().parent == Path(self.screenshots).resolve():
-                raise ValueError('Export outside the WoW Screenshots folder to preserve its originals.')
-            save_image(self.export_image(), path, r['source'])
-            self.say('Saved: ' + str(path))
-        except Exception as error:
-            self.error(error)
-
-    def save_batch(self, choose_folder=False):
-        if self.batch_running:return
-        destination=filedialog.askdirectory(parent=self.root,initialdir=self.output,title='Save selected images') if choose_folder else self.output
-        if not destination:return
-        try:default=asdict(self.style())
-        except (ValueError,TypeError) as error:self.error(error);return
-        rows=[dict(r,style=dict(r.get('style',default))) for r in self.selected_records()]
-        if not rows:return
-        self.batch_running=True;self.set_enabled(bool(self.images))
-        self.say(f'Saving {len(rows)} images…')
-        future=self.pool.submit(export_batch,rows,destination,self.view.get(),self.screenshots,[r['source'] for r in self.records if r.get('source')])
-        def done():
-            if not future.done():self.root.after(100,done);return
-            self.batch_running=False;self.set_enabled(bool(self.images))
-            try:
-                saved,errors=future.result()
-                self.say(f'Saved {len(saved)} images to {destination}'+(f' · {len(errors)} failed' if errors else ''))
-                if errors:messagebox.showwarning('Batch export',f'Saved {len(saved)} of {len(rows)} images.\n\n'+'\n'.join(errors[:12]),parent=self.root)
-            except Exception as error:self.error(error)
-        self.root.after(100,done)
+                row=next((r for r in rows if r.get('source')),rows[0])
+                reference=(row['screenWidth'],row['screenHeight']) if mode=='Original' else (row['width'],row['height'])
+                if mode=='Styled':
+                    style=Style(**row['style']).validated();margin=max(style.padding,style.shadow*3)+style.border
+                    reference=(reference[0]+2*margin,reference[1]+2*margin)
+            self.export_window=ExportWindow(self,rows,mode,reference)
+        except Exception as error:self.error(error)
 
     def copy(self):
-        if self.images:
+        if self.images and len(self.selected_ids)==1:
             try:
                 copy_image(self.export_image(), self.root.winfo_id()); self.say('Image copied. Clipboard transparency is flattened onto white.')
             except Exception as error:

@@ -307,17 +307,20 @@ def render(crop, style):
     return output
 
 
-def save_image(image, destination, original=None):
+def save_image(image, destination, original=None, quality=95):
     destination = Path(destination)
     if original and destination.resolve() == Path(original).resolve():
         raise ValueError('Choose a different destination; originals are preserved.')
-    if destination.suffix.lower() not in ('.png', '.jpg', '.jpeg'):
-        raise ValueError('Choose PNG or JPEG for export.')
+    if destination.suffix.lower() not in ('.png', '.jpg', '.jpeg', '.webp'):
+        raise ValueError('Choose PNG, JPEG or WebP for export.')
     destination.parent.mkdir(parents=True, exist_ok=True)
     if destination.suffix.lower() in ('.jpg', '.jpeg'):
         flat = Image.new('RGB', image.size, 'white')
-        flat.paste(image, mask=image.getchannel('A'))
-        flat.save(destination, quality=95)
+        rgba=image.convert('RGBA')
+        flat.paste(rgba, mask=rgba.getchannel('A'))
+        flat.save(destination, quality=quality)
+    elif destination.suffix.lower()=='.webp':
+        image.save(destination,format='WEBP',quality=quality)
     else:
         image.save(destination, format='PNG')
 

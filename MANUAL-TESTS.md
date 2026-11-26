@@ -85,3 +85,13 @@ addon works when the companion is closed.
 - Verify the Finish selection hint is inside the panel and readable; capture rows have alternating shading and padding before selection.
 - Verify matching rounded borders on Finish controls and Settings paths; typing, spin buttons and dropdown selection still work.
 - In Full-size preview, Fit mode and smaller images should have no scrollbars. Zoom with the mouse wheel until overflow appears, then zoom out and verify the scrollbars disappear. Drag to pan an overflowing image.
+
+## Companion 0.7.0 export window
+
+- Select one capture: Copy Image is visible. Select several: it disappears, and Export opens options for the full selection.
+- Export full-size PNG, then choose 850 px wide and export again without closing the window. Check dimensions, unique filenames, and addon folders; originals remain intact.
+- Use captures with different proportions: locked width gives each its own matching height. Edit height instead and verify width follows.
+- Unlock the ratio and try Fit inside, Fill / crop and Stretch at square dimensions. Check padding, centered cropping, and exact output sizes.
+- Export JPEG and WebP with different quality settings. PNG/WebP preserve transparency; JPEG uses white.
+- Browse to another base folder, export, then Reset to defaults: full-size PNG and the configured default location return without changing capture styles.
+- Update from 0.6.7 using Settings > Check for updates; confirm records, presets and the default save location survive.
