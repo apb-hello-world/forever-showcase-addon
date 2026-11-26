@@ -266,6 +266,11 @@ class App:
         self.widget(self.listbox, 55, 206, 172, 260)
         self.listbox.bind('<Configure>', self.resize_capture_list)
         self.listbox.bind('<Button-1>', self.click_capture)
+        # Our click handler owns pointer selection. The Listbox class drag
+        # handlers otherwise use an uninitialized/stale native selection anchor
+        # and can clear it on even a one-pixel movement before button release.
+        for sequence in ('<B1-Motion>','<B1-Leave>','<B1-Enter>','<ButtonRelease-1>'):
+            self.listbox.bind(sequence,lambda event:'break')
         self.listbox.bind('<Control-a>', self.select_all)
         self.listbox.bind('<<ListboxSelect>>', self.select)
         self.count_text = self.text('', 57, 486, 170, 11, IVORY)
@@ -423,6 +428,7 @@ class App:
         index=self.listbox.nearest(event.y)
         bounds=self.listbox.bbox(index)
         if not bounds or not bounds[1]<=event.y<bounds[1]+bounds[3]:return 'break'
+        self.listbox.focus_set()
         identity=self.visible_records[index]['id']
         if event.state & 0x4:
             if identity in self.selected_ids:self.selected_ids.remove(identity)
@@ -432,7 +438,9 @@ class App:
             self.selected_ids={r['id'] for r in self.visible_records[min(anchor,index):max(anchor,index)+1]}
         else:self.selected_ids={identity}
         self.selected=identity if identity in self.selected_ids else next((r['id'] for r in self.visible_records if r['id'] in self.selected_ids),None)
-        self.refresh_list();self.load_selected_style();self.request_render(False)
+        self.refresh_list()
+        self.listbox.selection_anchor(index)
+        self.load_selected_style();self.request_render(False)
         return 'break'
 
     def select(self,_=None):

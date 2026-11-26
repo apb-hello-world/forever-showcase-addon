@@ -92,12 +92,12 @@ UI rather than hiding UIParent; unrelated high-strata dialogs may still appear.
 ## Optional desktop capture companion in 0.4.0
 
 Launch `dist/ForeverShowcaseCompanion/ForeverShowcaseCompanion.exe`.
-Use Draw area ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Capture ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Captures ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Send & reload in game, then select the
+Use Draw area ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Capture ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Captures ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ Send & reload in game, then select the
 imported capture on the desktop. See CAPTURE-WORKFLOW.md for folders, presets,
 export controls and the test checklist. 30 automated tests pass; real capture
 event timing and pixel mapping await the owner. No GitHub work or publishing.
 
-## Desktop companion 0.6.2
+## Desktop companion 0.6.3
 
 Download the Windows installer from this repository's companion releases. It installs for the current user, adds a Start menu shortcut and an uninstaller, and preserves settings and capture records in `%LOCALAPPDATA%/ForeverShowcase` across upgrades. The addon remains usable without it.
 
@@ -105,6 +105,6 @@ Download the Windows installer from this repository's companion releases. It ins
 - The Finish controls apply edits to every selected capture. Each capture retains its own saved style. Selecting more captures alone does not overwrite their styles.
 - Save exports all selected captures in the current Original, Crop or Styled mode. Save to folder chooses a batch destination. Existing files and original screenshots are preserved; unresolved captures are reported separately.
 - Full-size preview opens a separate resizable window with Fit window, 100%, mouse-wheel zoom and drag-to-pan controls. Scrollbars appear only when the image overflows.
-- Settings Ã¢â€ â€™ Check for updates checks public GitHub companion releases. Download and installation require confirmation; no account or token is needed. Addon releases are ignored by the companion updater.
+- Settings ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ Check for updates checks public GitHub companion releases. Download and installation require confirmation; no account or token is needed. Addon releases are ignored by the companion updater.
 
 See [RELEASING.md](RELEASING.md) for build, installer and release instructions.
